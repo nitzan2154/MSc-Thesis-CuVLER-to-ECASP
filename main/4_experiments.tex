@@ -72,6 +72,8 @@ regions under the sampled visibility regimes are shown in
 Fig.~\ref{fig:supp_synthetic_masks}.
 
 
+% BEGIN LAYOUT ADJUSTMENT: place the full-page figure after the current text page
+\afterpage{%
 \clearpage
 \begin{figure*}[p]
 \centering
@@ -94,6 +96,8 @@ which supervises the training-only mask-completion head.}
 \label{fig:supp_synthetic_masks}
 \end{figure*}
 \clearpage
+}
+% END LAYOUT ADJUSTMENT: place the full-page figure after the current text page
 
 % END SUPPLEMENTARY MATERIAL: Synthetic Data Generation
 \paragraph{Evaluation.}
@@ -279,6 +283,8 @@ Camera subsets and real/synthetic training sources are stated explicitly in
 Tab.~\ref{tab:main_results}.
 
 % END SUPPLEMENTARY MATERIAL: Evaluation Protocol -- baselines
+% BEGIN LAYOUT ADJUSTMENT: fill the current page before changing margins for the results table
+\afterpage{%
 \newgeometry{left=0.8cm, right=0.8cm}
 
 \begin{table*}[t]
@@ -447,6 +453,8 @@ Mask-robust fine-tuning
 \end{table*}
 
 \restoregeometry
+}
+% END LAYOUT ADJUSTMENT: fill the current page before changing margins for the results table
 
 
 With benchmark binary masks and silhouette refinement, ECASP outperforms synthetic-only EpiSurfEmb across all reported pose metrics for both objects, despite using one fewer camera and no RGB appearance.
