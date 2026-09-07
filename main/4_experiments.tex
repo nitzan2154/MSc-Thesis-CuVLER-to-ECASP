@@ -28,7 +28,6 @@ No real RGB images, depth maps, or masks are used to train ECASP.
 The MVPSP training split is used only to derive pose, workspace, depth, and visibility statistics that guide synthetic sampling.
 We sample object poses using these statistics together with uniformly sampled \(\mathrm{SO}(3)\) rotations, add synthetic geometric occluders, and render full and visible masks for supervision.
 After filtering invalid or extreme configurations, we obtain approximately \(46{,}351\) synthetic multi-view training samples.
-Further details are provided in the supplementary material.
 
 % BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Synthetic Data Generation
 
@@ -64,8 +63,8 @@ In particular, we retain only samples for which all four views have at
 least \(5\%\) visible object fraction, and we remove configurations outside
 the 9th--95th percentile range of the generated distribution.
 % TODO(author, supplementary integration): identify the statistic(s) used for
-% the 9th--95th percentile filtering. This filtering
-removes degenerate cases in which the object is almost entirely outside the
+% the 9th--95th percentile filtering.
+This filtering removes degenerate cases in which the object is almost entirely outside the
 view or nearly invisible in one of the cameras. The retained synthetic multi-view samples are stored in BOP format.
 
 Examples of visible masks, full amodal masks, and occluded foreground
@@ -221,7 +220,6 @@ first \(20\) epochs. The confidence gate for the residual translation is a
 two-layer MLP with hidden dimension \(64\).
 
 % END SUPPLEMENTARY MATERIAL: Additional Architecture Details -- translation conditioning and gate
-Further details are provided in the supplementary material.
 
 % BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Additional Architecture Details -- auxiliary heads
 
@@ -612,10 +610,9 @@ On YOLO masks, refinement reduces rotation error from \(3.54^\circ\) to
 \(1.45^\circ\) for the drill and from \(9.35^\circ\) to \(5.39^\circ\) for the
 screwdriver, yielding results that outperform synthetic-only EpiSurfEmb in five
 of six reported metrics despite using one fewer camera. Therefore, ECASP remains effective under segmentor mask errors.
-Full search parameters are provided in the supplementary material.
 % BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Multi-View Silhouette Refinement -- appendix reference
 
-These search settings are collected in Appendix~\ref{app:refinement}.
+Full search parameters are provided in Appendix~\ref{app:refinement}.
 
 % END SUPPLEMENTARY MATERIAL: Multi-View Silhouette Refinement -- appendix reference
 

@@ -29,7 +29,6 @@ Since preprocessing changes the image coordinate system, we update the camera in
 All subsequent geometric operations, including Pl\"ucker-ray construction, fundamental-matrix computation, epipolar sampling, and DLT triangulation, use \(\tilde{K}_{v_i}\).
 To preserve spatial information affected by cropping, we define for each view a crop descriptor \(c_{v_i}=[c_x^i,c_y^i,f_x^i,f_y^i,s^i]\), where \(c_x^i\) and \(c_y^i\) encode the crop-induced principal-point offset, \(f_x^i\) and \(f_y^i\) are the focal lengths on the preprocessed canvas, and \(s^i\) is the resize scale.
 The descriptors from all views are concatenated and used to condition the pose head.
-Full details are provided in the supplementary material.
 
 % BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Preprocessing
 
@@ -137,7 +136,6 @@ Before epipolar cross-view attention, Pl\"ucker-ray positional encoding~\cite{si
 For each feature location, we back-project the corresponding canvas pixel using the virtual intrinsics \(\tilde K_{v_i}\) and express the resulting ray in the reference frame using calibrated extrinsics.
 The ray is represented by Pl\"ucker coordinates \((d,m)\in\mathbb{R}^6\), where \(o\in\mathbb{R}^3\) is the camera center, \(d\in\mathbb{R}^3\) is the normalized ray direction, and \(m=o\times d\) is its moment.
 A small MLP maps the ray representation to \(C\) channels and adds it to \(F_{v_i}\), injecting calibrated camera-ray geometry.
-The exact coordinate-frame convention is provided in the supplementary material.
 
 
 % BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Plucker-Ray Positional Encoding
@@ -528,12 +526,10 @@ We use the soft Dice loss
 \]
 
 % END SUPPLEMENTARY MATERIAL: Full Training Objective -- mask-completion loss
-Full loss definitions are provided in the supplementary material.
 
 \paragraph{Routing-entropy regularizer.}
 We regularize the per-location view-weight distribution \(w\) from Sec.~\ref{sec:fusion} with an entropy \(H(w)\).
 Since this term is subtracted in Eq.~\ref{eq:total_loss}, minimizing the objective discourages collapse to a single view.
-Full details are provided in the supplementary material.
 
 
 
