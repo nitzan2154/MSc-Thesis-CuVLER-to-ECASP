@@ -3,6 +3,15 @@
 
 This section delves into our experimental framework and is designed to comprehensively evaluate our method's performance.
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Overview
+
+The implementation and experimental details include synthetic data
+generation, the training objective and schedule, predicted-mask evaluation,
+mask-robust fine-tuning, silhouette refinement, and additional analyses.
+The crop-and-resize geometry, virtual camera intrinsics, and Pl\"ucker-ray
+convention are detailed alongside the method in Chapter~\ref{sec:method}.
+
+% END SUPPLEMENTARY MATERIAL: Overview
 \section{Dataset and Evaluation Protocol}
 \label{sec:dataset}
 \paragraph{Benchmark dataset.}
@@ -21,12 +30,100 @@ We sample object poses using these statistics together with uniformly sampled \(
 After filtering invalid or extreme configurations, we obtain approximately \(46{,}351\) synthetic multi-view training samples.
 Further details are provided in the supplementary material.
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Synthetic Data Generation
+
+\label{supp:synthetic_data}
+
+The object meshes are those provided with the MVPSP benchmark.
+No real pose annotations are used as training supervision.
+
+Object positions are sampled around the estimated workspace center with
+Gaussian offsets. Rotations are sampled from a mixture distribution: with
+probability \(0.6\), we perturb a rotation sampled from the empirical
+rotation distribution with small axis-angle noise, with probability \(0.2\),
+we use a larger perturbation, and with probability \(0.2\), we sample
+uniformly from \(\mathrm{SO}(3)\). The small and large perturbation
+standard deviations are \(8^\circ\) and \(22^\circ\), respectively. This
+combines coverage of the observed pose distribution with broader
+rotational diversity.
+
+To simulate partial occlusion, we insert simple geometric occluders into
+the shared 3D scene before rendering. Occluder configurations are sampled
+to produce easy, medium, and heavy visibility regimes. For each camera, we
+render the target alone to obtain the full object mask
+\(M_v^{\mathrm{full}}\), and render the target together with the occluders
+to obtain the visible mask \(M_v^{\mathrm{vis}}\). A target pixel is marked
+visible when the target-alone depth agrees with the full-scene depth within
+a small tolerance. The visible masks are used as network inputs, while the
+full masks provide supervision for the training-only amodal
+mask-completion head. The two masks also define the BOP-style visibility
+fields.
+
+After rendering, we discard invalid configurations and extreme samples.
+In particular, we retain only samples for which all four views have at
+least \(5\%\) visible object fraction, and we remove configurations outside
+the 9th--95th percentile range of the generated distribution.
+% TODO(author, supplementary integration): identify the statistic(s) used for
+% the 9th--95th percentile filtering. This filtering
+removes degenerate cases in which the object is almost entirely outside the
+view or nearly invisible in one of the cameras. The retained synthetic multi-view samples are stored in BOP format.
+
+Examples of visible masks, full amodal masks, and occluded foreground
+regions under the sampled visibility regimes are shown in
+Fig.~\ref{fig:supp_synthetic_masks}.
+
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{graphics/figures/visibility_supervision_figure_v9.pdf}
+\caption{Synthetic visibility supervision. Representative samples are shown
+for the drill and screwdriver under increasing occlusion. Examples are
+grouped by the minimum visible fraction across the four views:
+Easy \((\min_v \mathrm{vis}_v \ge 0.7)\), Medium
+\((\min_v \mathrm{vis}_v \in [0.3,0.5))\), and Heavy
+\((\min_v \mathrm{vis}_v < 0.1)\). Each group shows the four calibrated
+side views \(L\), \(OL\), \(OR\), and \(R\), with the per-view visible
+fraction \(\mathrm{vis}_v\) reported above each input mask.
+\textbf{Row 1:} the visible mask \(M_v^{\mathrm{vis}}\), used as the
+network input. \textbf{Row 2:} the supervision decomposition, with visible
+foreground pixels shown in green and occluded foreground pixels
+\(M_v^{\mathrm{full}}\setminus M_v^{\mathrm{vis}}\) shown in red. Their
+union forms the full CAD-rendered amodal mask \(M_v^{\mathrm{full}}\),
+which supervises the training-only mask-completion head.}
+
+\label{fig:supp_synthetic_masks}
+\end{figure*}
+
+% END SUPPLEMENTARY MATERIAL: Synthetic Data Generation
 \paragraph{Evaluation.}
 We evaluate on the MVPSP wetlab test set using the same four calibrated side views L+OL+OR+R, shown in Fig.~\ref{fig:camera_setup}.
 Our primary evaluation uses the benchmark-provided binary masks and camera calibration. We additionally evaluate masks predicted from RGB by a YOLO26 segmenter~\cite{jocher2026yolo26} fine-tuned using only the visible-mask annotations from the MVPSP training split.
 ECASP itself receives no RGB images or depth maps.
 In total, we evaluate \(88{,}152\) multi-view samples.
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Evaluation Protocol -- manifest and association
+
+\label{supp:evaluation_protocol}
+
+% TODO(author): specify the exact benchmark visibility threshold used to build
+% the final test manifest.
+We evaluate the four synchronized static side views L, OL, OR, and R from
+MVPSP test recordings 004, 005, 009, and 020 at stride one.
+Each evaluation sample is one time-instant--object pair containing all four
+views, rather than one image or one individual camera observation.
+The manifest contains \(88{,}152\) samples: \(55{,}782\) for the drill and
+\(32{,}370\) for the screwdriver.
+
+The benchmark manifest is indexed by synchronized timestamp and object
+identity, which supplies the correspondence of the target object across
+cameras.
+For predicted masks, the class-specific prediction for the same target
+identity is used in each synchronized view.
+Thus, the present evaluation isolates segmentation and pose estimation and
+does not evaluate errors from an independent cross-view instance-association
+system.
+
+% END SUPPLEMENTARY MATERIAL: Evaluation Protocol -- manifest and association
 \paragraph{Metrics.}
 We report ADD for the drill and ADD-S for the symmetric screwdriver, together with ADD/ADD-S recall at the \(10\%\) object-diameter threshold.
 We also report translation error \(\Delta t\), measured as the distance between the estimated and ground-truth object origins in the reference camera frame, and geodesic rotation error \(\Delta R\).
@@ -38,19 +135,103 @@ For each multi-view sample, the reference view is selected deterministically fro
 All poses are evaluated in the selected reference camera frame.
 This avoids tying the pose architecture and evaluation to a fixed camera.
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Reference-View Assignment; Evaluation Protocol -- reference frame
+
+\label{supp:reference_view}
+
+The architecture processes all input views symmetrically.
+% TODO(author): replace the abstract hash below with the exact hash algorithm
+% and seed used to construct the released manifests.
+
+Let \(\{v_i\}_{i=0}^{N-1}\) denote the calibrated input views and let \(n\)
+denote the sample index. We choose the reference index as
+\[
+r(n) = h_{\eta}(n) \bmod N ,
+\]
+where \(h_{\eta}\) is a fixed seeded integer hash function. This assignment
+is deterministic across runs, but distributes the reference frame across
+the camera set. It therefore preserves reproducibility while preventing the
+model and evaluation protocol from giving special status to one physical
+camera. After selection, we reorder the views so that the reference is
+denoted by \(v_0\).
+
+We use this assignment for both prediction and evaluation; all reported
+translations and rotations are expressed in the selected reference frame.
+
+% END SUPPLEMENTARY MATERIAL: Reference-View Assignment; Evaluation Protocol -- reference frame
 \section{Implementation Details}
 \label{sec:implementation}
 
 \paragraph{Architecture.}
 All masks are cropped and resized to a \(512\times512\) canvas before feature extraction.
 We use a DINOv3-pretrained ConvNeXt-Tiny backbone~\cite{simeoni2025dinov3,liu2022convnext}, with third-stage features projected to fusion dimension \(C=256\) by a \(1\times1\) convolution.
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Additional Architecture Details -- backbone adaptation
+
+\label{supp:architecture}
+
+The third-stage backbone output has \(384\) channels.
+Using this stage instead of the final fourth stage retains denser
+spatial tokens for epipolar sampling and cross-view attention.
+
+To adapt the pretrained backbone to binary-mask inputs, we use
+LoRA~\cite{hu2022lora} adapters with rank \(r=16\) and scaling
+\(\alpha=16\).
+The adapters are applied to the ConvNeXt pointwise convolution layers,
+corresponding to \texttt{pwconv1} and \texttt{pwconv2}.
+The depthwise convolution filters are kept frozen, while the
+patch-embedding stem and LayerNorm parameters are fine-tuned.
+
+% END SUPPLEMENTARY MATERIAL: Additional Architecture Details -- backbone adaptation
 The resulting stride-16 feature maps have spatial size \(H'\times W'=32\times32\).
 The Pl\"ucker-ray positional encoding is projected to dimension \(C\) using a two-layer MLP.
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Additional Architecture Details -- ray MLP
+
+The ray MLP has hidden widths \(128\) and \(256\); its output is added
+to the corresponding backbone feature.
+
+% END SUPPLEMENTARY MATERIAL: Additional Architecture Details -- ray MLP
 The epipolar cross-view attention module uses \(L_{\mathrm{attn}}=2\) layers, \(n_{\mathrm{head}}=8\) attention heads, and \(S=24\) samples per epipolar line.
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Additional Architecture Details -- fusion and aggregation
+
+The per-pixel routing head is a
+two-layer MLP with hidden dimension \(64\), applied independently at each
+spatial location. The global per-view confidence head uses a \(4\)-head
+attention pool with feature dimension \(64\). The aggregation refinement
+module \(g\) consists of two \(3\times3\) convolutions with GELU
+nonlinearities.
+
+% END SUPPLEMENTARY MATERIAL: Additional Architecture Details -- fusion and aggregation
 Both attention-pooled pose features and the object-ID embedding use dimension \(d=64\).
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Additional Architecture Details -- rotation and object embedding
+
+Both the main rotation pool and the per-view rotation pool use a single
+learnable query, \(4\) attention heads, and pooled feature dimension
+\(d=64\). The rotation MLP has hidden widths \(256\) and \(128\), with
+LayerNorm, and predicts the continuous 6D rotation representation. The
+object embedding has dimension \(64\) and is shared across the rotation and
+translation branches.
+
+% END SUPPLEMENTARY MATERIAL: Additional Architecture Details -- rotation and object embedding
 For gated translation, the gate-logit bias is initialized to \(4.0\), giving \(w_{\mathrm{gate}}\approx0.98\), while the residual head is zero-initialized so that the initial prediction follows \(t_{\mathrm{tri}}\).
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Additional Architecture Details -- translation conditioning and gate
+
+The translation branch uses the same crop-descriptor conditioning as the
+rotation branch. Its AdaLN-Zero modulation is linearly ramped in over the
+first \(20\) epochs. The confidence gate for the residual translation is a
+two-layer MLP with hidden dimension \(64\).
+
+% END SUPPLEMENTARY MATERIAL: Additional Architecture Details -- translation conditioning and gate
 Further details are provided in the supplementary material.
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Additional Architecture Details -- auxiliary heads
+
+The mask-completion head is a single-block transformer decoder with
+embedding dimension \(192\), \(4\) heads, and MLP expansion ratio \(2\),
+followed by a \(32\)-channel upsampling refinement block. The allocentric
+rotation head is a lightweight MLP applied to a globally pooled per-view
+feature and is used only during training.
+
+% END SUPPLEMENTARY MATERIAL: Additional Architecture Details -- auxiliary heads
 \paragraph{Loss weights.}
 For Eq.~\ref{eq:total_loss}, we use
 \(\lambda_{\mathrm{rot}}=2\),
@@ -62,6 +243,23 @@ The translation loss uses \(w_{xy}=w_z=1\).
 The mask-completion loss is linearly warmed up over \(E_{\mathrm{warm}}=5\) epochs.
 Within \(\mathcal{L}_{\mathrm{mc}}\), the occluded-region BCE and soft Dice terms are weighted by \(\beta_{\mathrm{occ}}=3.0\) and \(\beta_{\mathrm{dice}}=0.5\), respectively.
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Full Training Objective -- numerical stabilization
+
+We use \(\varepsilon=10^{-5}\) for the numerically stabilized Dice and
+entropy terms. The mask-completion warmup avoids perturbing the pose features
+early in training.
+
+% END SUPPLEMENTARY MATERIAL: Full Training Objective -- numerical stabilization
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Training Details
+
+\label{supp:training}
+We train ECASP for \(100\) epochs using AdamW and bfloat16 mixed precision.
+Training is performed on two NVIDIA RTX PRO 6000 GPUs with a
+per-GPU batch size of \(24\). The learning-rate schedule uses a linear
+warmup followed by cosine annealing. The base learning rate is
+\(3\cdot10^{-4}\), and the minimum learning rate is \(10^{-6}\).
+
+% END SUPPLEMENTARY MATERIAL: Training Details
 \section{Main Results}
 \label{sec:main_results}
 We compare ECASP with the MVPSP single-view and multi-view baselines:
@@ -69,6 +267,18 @@ ZebraPose~\cite{su2022zebrapose}, SurfEmb~\cite{haugaard2022surfemb},
 and EpiSurfEmb~\cite{haugaard2023episurfemb}.
 As shown in Tab.~\ref{tab:main_results}, ECASP remains competitive with RGB-based multi-view methods while using only binary mask inputs and synthetic-only training.
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Evaluation Protocol -- baselines
+
+The ZebraPose, SurfEmb, and EpiSurfEmb results reported here are
+taken from the official MVPSP benchmark evaluation~\cite{hein2025surgicalnavigation}.
+Those baselines operate on RGB input patches cropped using ground-truth 2D
+bounding boxes.
+EpiSurfEmb combines the corresponding calibrated patches across views and
+therefore also assumes known target identity across its inputs.
+Camera subsets and real/synthetic training sources are stated explicitly in
+Tab.~\ref{tab:main_results}.
+
+% END SUPPLEMENTARY MATERIAL: Evaluation Protocol -- baselines
 \newgeometry{left=0.8cm, right=0.8cm}
 
 \begin{table*}[t]
@@ -246,6 +456,72 @@ Compared with EpiSurfEmb trained on real data, ECASP achieves lower screwdriver 
 To test the practical mask-input assumption, we fine-tune a YOLO segmenter on the visible binary masks from the MVPSP training split and replace the benchmark masks with its test-set predictions.
 Predicted masks moderately affect the drill but cause a larger degradation for the screwdriver, whose thin silhouette is more susceptible to fragmentation.
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Predicted-Mask Evaluation
+
+\label{supp:predicted_masks}
+
+% TODO(author): add the exact YOLO26 scale/checkpoint, input resolution,
+% optimization schedule, mask threshold, and any component filtering.
+We fine-tune an Ultralytics YOLO26 instance-segmentation
+model~\cite{jocher2026yolo26} using only RGB images and their
+\texttt{mask\_visib} annotations from the MVPSP training split.
+No test images, test masks, or pose annotations are used to optimize the
+segmenter.
+At test time, we convert the predicted instance output into one binary mask
+per target object and view. No ground-truth pose information is used for mask
+selection or post-processing.
+
+YOLO26 produces \(36\) empty masks among the \(352{,}608\) evaluated views.
+Every such case affects only one of the four views in its multi-view sample.
+We retain these samples and provide an all-zero mask for the missing view
+rather than dropping it, allowing the remaining calibrated observations to
+support pose estimation.
+
+YOLO26 masks are generally more accurate for the drill than for the
+screwdriver, whose thin structure makes segmentation more challenging.
+Drill predictions may truncate the tip or chuck, whereas screwdriver
+predictions are more susceptible to fragmentation and lateral displacement.
+These errors perturb not only the silhouette features but also the mask crop,
+virtual intrinsics, and crop descriptor used by the pose head.
+This explains the larger degradation observed for the screwdriver in the
+results in Tab.~\ref{tab:main_results}.
+
+% END SUPPLEMENTARY MATERIAL: Predicted-Mask Evaluation
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Additional Predicted-Mask Analysis
+
+\label{supp:predicted_mask_analysis}
+
+The screwdriver is more sensitive to predicted-mask quality than the drill.
+Tab.~\ref{tab:supp_screwdriver_recordings} reports raw symmetry-aware
+rotation error separately for each test recording.
+Benchmark-mask performance is comparatively stable, whereas the larger
+variation with YOLO masks follows differences in segmentation quality across
+recordings.
+
+\begin{table}[H]
+\centering
+\caption{Per-recording screwdriver rotation error in degrees before
+silhouette refinement. Lower is better.}
+\label{tab:supp_screwdriver_recordings}
+\small
+\setlength{\tabcolsep}{7pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Input masks & 004 & 005 & 009 & 020 \\
+\midrule
+Benchmark & \(3.65\) & \(3.75\) & \(4.48\) & \(3.16\) \\
+YOLO26 & \(5.74\) & \(12.14\) & \(9.19\) & \(7.50\) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For the drill, recording 020 is the most difficult of the four recordings:
+the raw rotation error is \(5.29^\circ\) with YOLO26 masks and remains
+\(4.82^\circ\) with benchmark masks.
+Together, these results indicate that the predicted-mask degradation is not explained by one global pose bias. It varies with object, recording, and mask
+quality.
+
+% END SUPPLEMENTARY MATERIAL: Additional Predicted-Mask Analysis
 \paragraph{Robustness to mask errors.}
 We further fine-tune ECASP on synthetic mask corruptions designed to reproduce characteristic segmentation failures.
 For the drill, we randomly truncate the mask along its principal axis to simulate missing tip and chuck regions.
@@ -254,13 +530,92 @@ The corruptions are applied before cropping, while the pose supervision remains 
 This fine-tuning retains comparable performance on benchmark masks.
 
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Mask-Robust Fine-Tuning
+
+\label{supp:mask_robust_finetuning}
+
+We model the two characteristic segmentation failures using object-specific
+synthetic corruptions applied to the rendered visible mask before cropping.
+The crop, virtual intrinsics, and crop descriptor are consequently recomputed
+from the corrupted mask exactly as they are for a predicted mask, while the
+pose label remains unchanged.
+
+For the drill, we cut the visible mask perpendicular to the CAD model's
+principal axis to simulate a missing tip or chuck.
+The retained axial fraction is sampled from \([0.85,1.0]\), with an
+independent per-view jitter of at most \(0.05\).
+This corruption is applied with probability \(0.5\).
+
+For the screwdriver, we insert one or two gaps perpendicular to the shaft
+axis while retaining the two axial extremes.
+The nominal retained coverage is \(0.88\), and each resulting segment is
+laterally displaced by up to \(0.60\) times the shaft width with probability
+\(0.85\).
+Unlike pixel-removal noise, this corruption reproduces simultaneous missing
+and spurious regions caused by fragmented, displaced predictions.
+
+Starting from the base ECASP checkpoint, we fine-tune jointly with both
+corruptions on the same synthetic training set.
+We reinitialize the optimizer and scheduler, use a learning rate of
+\(3\cdot10^{-5}\), and continue training for \(30\) epochs.
+The checkpoint at epoch \(110\) is selected according to validation
+performance.
+
+The corruption design was informed by an exploratory analysis of predicted
+mask failures.
+Screwdriver predictions commonly contain fragmented or laterally displaced
+components, whereas drill predictions tend to truncate the object along its
+principal axis.
+Because these diagnostics were measured on the evaluation recordings, the
+robustness-adapted results should be interpreted as adaptation to the
+observed segmenter error model rather than a fully independent assessment of
+an unseen corruption distribution.
+
+% END SUPPLEMENTARY MATERIAL: Mask-Robust Fine-Tuning
 \paragraph{Multi-view silhouette refinement.}
 As a label-free test-time post-processing step, we refine pose through a coarse-to-fine, multi-start search that maximizes agreement between CAD-rendered silhouettes and the four input masks.
 The silhouette score penalizes both input-mask regions missed by the rendering and rendered regions outside the input masks. Refinement is accepted only when this score improves.
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Multi-View Silhouette Refinement -- objective
+
+\label{supp:silhouette_refinement}
+
+For a candidate pose \((R,t)\), we render the CAD model into every calibrated
+input view and compare the resulting mask \(\widehat{M}_v(R,t)\) with the
+corresponding input mask \(M_v\).
+We define
+\[
+\operatorname{cov}_v =
+\frac{|\widehat{M}_v(R,t)\cap M_v|}{|M_v|+\varepsilon},
+\qquad
+\operatorname{exc}_v =
+\frac{|\widehat{M}_v(R,t)\setminus M_v|}
+{|\widehat{M}_v(R,t)|+\varepsilon},
+\]
+and minimize
+\[
+\mathcal{J}(R,t)
+=
+\sum_{v\in V}
+\left[
+1-\operatorname{cov}_v
++0.25\,\operatorname{exc}_v
+\right].
+\]
+A \(0.05\) margin band is used when evaluating silhouette agreement to reduce
+sensitivity to rasterization and boundary noise.
+% TODO(author, supplementary integration): specify the units/normalization
+% and construction of the 0.05 margin band and the epsilon used in refinement.
+
+% END SUPPLEMENTARY MATERIAL: Multi-View Silhouette Refinement -- objective
 We refine rotation for both objects, additionally scanning the screwdriver's symmetry axis and, for predicted masks, refining its translation.
 On YOLO masks, refinement reduces rotation error from \(3.54^\circ\) to
 \(1.45^\circ\) for the drill and from \(9.35^\circ\) to \(5.39^\circ\) for the
 screwdriver, yielding results that outperform synthetic-only EpiSurfEmb in five
 of six reported metrics despite using one fewer camera. Therefore, ECASP remains effective under segmentor mask errors.
 Full search parameters are provided in the supplementary material.
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Multi-View Silhouette Refinement -- appendix reference
+
+These search settings are collected in Appendix~\ref{app:refinement}.
+
+% END SUPPLEMENTARY MATERIAL: Multi-View Silhouette Refinement -- appendix reference
 

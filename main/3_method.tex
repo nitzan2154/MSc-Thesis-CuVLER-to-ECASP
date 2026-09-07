@@ -31,6 +31,99 @@ To preserve spatial information affected by cropping, we define for each view a 
 The descriptors from all views are concatenated and used to condition the pose head.
 Full details are provided in the supplementary material.
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Preprocessing
+
+\label{supp:preprocessing}
+
+% TODO(author, supplementary integration): specify the crop and virtual-intrinsics
+% fallback for the empty predicted masks retained in the evaluation.
+Given a binary visible mask \(M_v\), we compute the tight foreground
+bounding box in half-open pixel coordinates,
+\[
+B_v = [u_{\min},u_{\max}) \times [v_{\min},v_{\max}) ,
+\]
+where \(u\) and \(v\) denote horizontal and vertical image coordinates.
+The mask is cropped to this box and resized with preserved aspect ratio
+onto a \(G \times G\) canvas, with \(G=512\). Let
+\[
+b_w = u_{\max}-u_{\min}, \qquad
+b_h = v_{\max}-v_{\min}.
+\]
+The resize factor is
+\[
+s_v = 0.95 \cdot \min\!\left(\frac{G}{b_w}, \frac{G}{b_h}\right),
+\]
+so that the longer side occupies \(95\%\) of the canvas. The resized crop
+is centered using padding offsets
+\[
+\delta_u =
+\left\lfloor
+\frac{G-\lfloor s_v b_w \rfloor}{2}
+\right\rfloor,
+\qquad
+\delta_v =
+\left\lfloor
+\frac{G-\lfloor s_v b_h \rfloor}{2}
+\right\rfloor .
+\]
+
+Since cropping and resizing change the image coordinate system, we absorb
+this transformation into a virtual intrinsic matrix. A pixel
+\(p=[u,v,1]^\top\) in the original image is mapped to the preprocessed
+canvas by
+\[
+\tilde{p}=A_v p,
+\qquad
+A_v =
+\begin{bmatrix}
+s_v & 0 & \delta_u - s_v u_{\min} \\
+0 & s_v & \delta_v - s_v v_{\min} \\
+0 & 0 & 1
+\end{bmatrix},
+\]
+and the virtual intrinsics are
+\[
+\tilde{K}_v = A_v K_v .
+\]
+All subsequent geometric operations, including Pl\"ucker-ray positional encoding,
+Fundamental-matrix computation, epipolar sampling, and DLT triangulation,
+use \(\tilde{K}_v\).
+
+For operations on the stride-\(\rho\) feature grid, with \(\rho=16\), we
+use
+\[
+\tilde{K}^{\mathrm{feat}}_v =
+\begin{bmatrix}
+1/\rho & 0 & 0 \\
+0 & 1/\rho & 0 \\
+0 & 0 & 1
+\end{bmatrix}
+\tilde{K}_v .
+\]
+This matches the \(32 \times 32\) feature maps extracted from the
+\(512 \times 512\) canvas.
+Equivalently, feature-grid coordinates can be used directly with
+\(\tilde{K}^{\mathrm{feat}}_v\).
+For the Pl\"ucker-ray encoding below, we instead convert each feature location to its corresponding canvas pixel center and use \(\tilde{K}_v\).
+
+To preserve scene-position information lost by cropping, we also compute a
+normalized crop descriptor. Let
+\((\tilde{f}_{x,v},\tilde{f}_{y,v},\tilde{c}_{x,v},\tilde{c}_{y,v})\)
+denote the focal lengths and principal point of \(\tilde{K}_v\). We define
+\[
+c_v =
+\left[
+\frac{\tilde{c}_{x,v}-G/2}{G/2},
+\frac{\tilde{c}_{y,v}-G/2}{G/2},
+\frac{\tilde{f}_{x,v}}{G},
+\frac{\tilde{f}_{y,v}}{G},
+s_v
+\right].
+\]
+The descriptors from all views, \(\{c_{v_i}\}_{i=0}^{N-1}\), are
+concatenated and used to condition the pose head.
+
+% END SUPPLEMENTARY MATERIAL: Preprocessing
 \paragraph{Backbone encoding.}
 Each preprocessed binary mask is encoded by a shared DINOv3-pretrained ConvNeXt-Tiny backbone~\cite{simeoni2025dinov3,liu2022convnext}, adapted to the binary-mask domain with LoRA~\cite{hu2022lora} and lightweight fine-tuning.
 Specifically, we fine-tune the convolutional stem and LayerNorm parameters to further adapt the backbone to binary-mask inputs without destabilizing the pretrained representation.
@@ -47,6 +140,77 @@ A small MLP maps the ray representation to \(C\) channels and adds it to \(F_{v_
 The exact coordinate-frame convention is provided in the supplementary material.
 
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Plucker-Ray Positional Encoding
+
+\label{supp:plucker}
+
+Let \((i,j)\) denote a feature-map location, with row index \(i\) and
+column index \(j\). For a backbone stride \(\rho=16\), this location
+corresponds to the following pixel center on the preprocessed
+\(G \times G\) canvas:
+\[
+u_j = j\rho + \frac{\rho}{2} - \frac{1}{2},
+\qquad
+v_i = i\rho + \frac{\rho}{2} - \frac{1}{2}.
+\]
+Using the virtual intrinsics \(\tilde{K}_{v_k}\), the corresponding
+unnormalized camera-frame ray direction is
+\[
+\bar{d}^{\mathrm{cam}}_{v_k,i,j}
+=
+\tilde{K}_{v_k}^{-1}
+\begin{bmatrix}
+u_j \\ v_i \\ 1
+\end{bmatrix}.
+\]
+
+All rays are represented in the selected reference camera frame. Let
+\(T_{v_0 \rightarrow v_k}\) denote the transform from the reference view
+to view \(v_k\), with \(T_{v_0 \rightarrow v_0}=I\). We use the inverse
+transform
+\[
+T_{v_k \rightarrow v_0}
+=
+T_{v_0 \rightarrow v_k}^{-1}
+=
+\begin{bmatrix}
+R_{v_k \rightarrow v_0} & o_{v_k} \\
+0 & 1
+\end{bmatrix},
+\]
+where \(o_{v_k}\) is the camera center of view \(v_k\) expressed in the
+reference frame. The normalized ray direction in the reference frame is
+\[
+d_{v_k,i,j}
+=
+\frac{
+R_{v_k \rightarrow v_0}
+\bar{d}^{\mathrm{cam}}_{v_k,i,j}
+}{
+\left\|
+R_{v_k \rightarrow v_0}
+\bar{d}^{\mathrm{cam}}_{v_k,i,j}
+\right\|_2
+}.
+\]
+The Pl\"ucker moment is then
+\[
+m_{v_k,i,j} = o_{v_k} \times d_{v_k,i,j}.
+\]
+The final ray code is
+\[
+\ell_{v_k,i,j}
+=
+\left[
+d_{v_k,i,j},
+m_{v_k,i,j}
+\right]
+\in \mathbb{R}^{6}.
+\]
+A small MLP maps \(\ell_{v_k,i,j}\) to the feature dimension, and the
+result is added to the corresponding feature vector \(F_{v_k,:,i,j}\).
+
+% END SUPPLEMENTARY MATERIAL: Plucker-Ray Positional Encoding
 \section{Epipolar Cross-View Attention.}
 \label{sec:fusion}
 
@@ -173,6 +337,14 @@ Both are supervised by the auxiliary losses in Sec.~\ref{sec:loss}.
 
 \section{Training Objective}
 \label{sec:loss}
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Full Training Objective -- notation
+
+\label{supp:losses}
+The main pose losses supervise rotation and translation in the selected
+reference camera frame, while the remaining terms provide auxiliary
+supervision or regularization.
+
+% END SUPPLEMENTARY MATERIAL: Full Training Objective -- notation
 
 \noindent\textbf{Overview.}
 ECASP is trained end-to-end with a composite objective combining the main pose losses, auxiliary losses, and a routing-entropy regularizer:
@@ -210,11 +382,152 @@ w_{xy}\left\|t_{xy}-t_{xy}^{\mathrm{gt}}\right\|_1
 w_z\left|t_z-t_{z}^{\mathrm{gt}}\right|.
 \end{equation}
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Full Training Objective -- geodesic distance and object symmetries
+
+The geodesic distance used in the rotation loss is defined by
+\[
+\begin{aligned}
+d_{\mathrm{SO}(3)}(R_1,R_2) &=
+\arccos
+\left(
+\operatorname{clip}
+\left(
+\frac{\operatorname{tr}(R_1^{\top}R_2)-1}{2},
+-1,1
+\right)
+\right).
+\end{aligned}
+\]
+For the objects in our experiments, we use
+\[
+\begin{aligned}
+\mathcal{G}_{\mathrm{drill}}=\{I\}, \qquad
+\mathcal{G}_{\mathrm{screwdriver}}=\{I,R_z(\pi)\}.
+\end{aligned}
+\]
+When the object identity is written explicitly, the same rotation loss is
+denoted by \(\mathcal{L}_{\mathrm{rot}}^{\mathrm{sym}}(R,R^{\mathrm{gt}};c)\).
+Here \(t_{xy}=(t_x,t_y)\), and all translations are expressed in the
+selected reference camera frame.
+
+% END SUPPLEMENTARY MATERIAL: Full Training Objective -- geodesic distance and object symmetries
 \paragraph{Auxiliary losses.}
 In addition to the main pose losses, ECASP uses three auxiliary losses during training.
 The keypoint-origin loss \(\mathcal{L}_{\mathrm{kp}}\) supervises the per-view 2D projections \(\{\hat{p}_{v_i}\}_{i=0}^{N-1}\) of the CAD origin using a smooth-\(\ell_1\) loss.
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Full Training Objective -- keypoint-origin loss
+
+For view \(v_i\), the ground-truth projection is
+\[
+p^{\mathrm{gt}}_{v_i}
+=
+\pi
+\left(
+\tilde{K}_{v_i}
+\left(
+R_{0\rightarrow i}t^{\mathrm{gt}}+t_{0\rightarrow i}
+\right)
+\right),
+\]
+where \(T_{0\rightarrow i}=[R_{0\rightarrow i}\mid t_{0\rightarrow i}]\)
+is the transform from the reference camera frame to view \(v_i\), and
+\(\pi([x,y,z]^\top)=[x/z,y/z]^\top\). The auxiliary keypoint loss is
+\[
+\mathcal{L}_{\mathrm{kp}}
+=
+\frac{1}{N}
+\sum_{i=0}^{N-1}
+\operatorname{SmoothL1}
+\left(
+\hat{p}_{v_i},p^{\mathrm{gt}}_{v_i}
+\right).
+\]
+
+% END SUPPLEMENTARY MATERIAL: Full Training Objective -- keypoint-origin loss
 The allocentric rotation loss \(\mathcal{L}_{\mathrm{allo}}\) supervises the allocentric head using the symmetry-aware geodesic loss from Sec.~\ref{sec:main_pose_losses}.
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Full Training Objective -- allocentric rotation loss
+
+Let \(R^{\mathrm{gt}}_{v_i}\) denote the
+ground-truth object rotation expressed in view \(v_i\). The corresponding
+allocentric target is denoted by \(R^{\mathrm{gt}}_{\mathrm{allo},v_i}\). We
+supervise the predicted allocentric rotations with the same symmetry-aware
+geodesic loss,
+\[
+\mathcal{L}_{\mathrm{allo}}
+=
+\frac{1}{N}
+\sum_{i=0}^{N-1}
+\mathcal{L}^{\mathrm{sym}}_{\mathrm{rot}}
+\left(
+\hat{R}_{\mathrm{allo},v_i},
+R^{\mathrm{gt}}_{\mathrm{allo},v_i};
+c
+\right).
+\]
+
+% END SUPPLEMENTARY MATERIAL: Full Training Objective -- allocentric rotation loss
 The mask-completion loss \(\mathcal{L}_{\mathrm{mc}}\) combines binary cross-entropy, occluded-region binary cross-entropy, and soft Dice loss~\cite{milletari2016vnet}, where the occluded-region term is evaluated on object pixels present in the full mask but absent from the visible input mask.
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Full Training Objective -- mask-completion loss
+
+Let \(\hat{Z}^{\mathrm{full}}_{v_i}\) be the predicted amodal
+mask logits for view \(v_i\), \(M^{\mathrm{full}}_{v_i}\) the unoccluded
+full object mask, and \(M^{\mathrm{vis}}_{v_i}\) the visible input mask.
+The occluded foreground region is
+\[
+\Omega_{\mathrm{occ},v_i}
+=
+\left\{
+(h,w):
+M^{\mathrm{full}}_{v_i}(h,w)=1
+\;\land\;
+M^{\mathrm{vis}}_{v_i}(h,w)=0
+\right\}.
+\]
+The mask-completion loss combines binary cross-entropy with logits, occluded-region binary cross-entropy with logits, and soft Dice:
+\[
+\begin{aligned}
+\mathcal{L}_{\mathrm{mc}}
+&=
+\frac{1}{N}
+\sum_{i=0}^{N-1}
+\Bigl[
+\operatorname{BCE}
+\bigl(
+\hat{Z}^{\mathrm{full}}_{v_i},
+M^{\mathrm{full}}_{v_i}
+\bigr) \\
+&\quad
++
+\beta_{\mathrm{occ}}
+\operatorname{BCE}_{\Omega_{\mathrm{occ},v_i}}
+\bigl(
+\hat{Z}^{\mathrm{full}}_{v_i},
+M^{\mathrm{full}}_{v_i}
+\bigr) \\
+&\quad
++
+\beta_{\mathrm{dice}}
+\operatorname{Dice}
+\bigl(
+\sigma(\hat{Z}^{\mathrm{full}}_{v_i}),
+M^{\mathrm{full}}_{v_i}
+\bigr)
+\Bigr].
+\end{aligned}
+\]
+We use the soft Dice loss
+\[
+\begin{aligned}
+\operatorname{Dice}(\hat{M},M) &=
+1-
+\frac{
+2\sum_{h,w}\hat{M}(h,w)M(h,w)+\varepsilon
+}{
+\sum_{h,w}\hat{M}(h,w)+\sum_{h,w}M(h,w)+\varepsilon
+}.
+\end{aligned}
+\]
+
+% END SUPPLEMENTARY MATERIAL: Full Training Objective -- mask-completion loss
 Full loss definitions are provided in the supplementary material.
 
 \paragraph{Routing-entropy regularizer.}
@@ -224,6 +537,28 @@ Full details are provided in the supplementary material.
 
 
 
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Full Training Objective -- routing entropy
+
+Let \(w_{b,v,i,j}\) denote the per-view routing weight for batch element
+\(b\), view \(v\), and feature-map location \((i,j)\). We regularize the
+routing distribution with
+\[
+\begin{aligned}
+H(w) &=
+-\frac{1}{B H' W'}
+\sum_{b=1}^{B}
+\sum_{i=1}^{H'}
+\sum_{j=1}^{W'}
+\sum_{v=0}^{N-1}
+w_{b,v,i,j}
+\log\!\bigl(w_{b,v,i,j}+\varepsilon\bigr).
+\end{aligned}
+\]
+Because \(H(w)\) is subtracted from the objective, minimizing
+\(\mathcal{L}\) encourages higher-entropy view mixing and discourages
+routing collapse to a single view.
+
+% END SUPPLEMENTARY MATERIAL: Full Training Objective -- routing entropy
 % \section{Implementation details}
 % \label{subsec: implemntation-details}
 % \textbf{Pre-processing stage}

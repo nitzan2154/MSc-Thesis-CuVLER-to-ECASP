@@ -1,0 +1,37 @@
+% BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Multi-View Silhouette Refinement -- implementation details
+\chapter{Silhouette Refinement Implementation Details}
+\label{app:refinement}
+This appendix specifies the test-time procedure used with the silhouette
+objective in Sec.~\ref{supp:silhouette_refinement}.
+
+\paragraph{Parameter selection.}
+% TODO(author): specify the validation split or recordings used for refinement
+% parameter selection.
+Refinement hyperparameters were selected on a held-out validation split and
+kept fixed for test evaluation.
+
+\paragraph{Rendering and search.}
+We render the full evaluation mesh at half image resolution with pixel stride
+two, restricting rendering to a crop around the projected object padded by
+the bounding-box diagonal.
+Starting from the network pose, coordinate descent uses rotation steps
+\(4^\circ,2^\circ,1^\circ,0.5^\circ,\) and \(0.25^\circ\).
+We evaluate \(16\) rotation initializations and accept the refined pose only
+when its silhouette objective improves over the network initialization by a
+margin of \(3.0\).
+% TODO(author, supplementary integration): confirm how the 3.0 acceptance
+% margin is scaled relative to the summed fractional objective in
+% Sec.~\ref{supp:silhouette_refinement}; the source does not specify a scaling.
+
+\paragraph{Object-specific degrees of freedom.}
+For the drill, refinement optimizes rotation only.
+For the screwdriver, we additionally scan rotation about the object-frame
+\(z\)-axis over \(\pm25^\circ\), using a \(2.5^\circ\) coarse step followed
+by a \(0.5^\circ\) fine step.
+Translation refinement with a \(4\,\mathrm{mm}\) step is enabled for the
+screwdriver with predicted masks, but not with benchmark masks.
+
+\paragraph{Computation.}
+On \(12\) CPU workers, refinement of the complete test set requires
+approximately one hour per object.
+% END SUPPLEMENTARY MATERIAL: Multi-View Silhouette Refinement -- implementation details
