@@ -7,7 +7,7 @@ All errors are in millimeters except \(\Delta R\), which is in degrees.
 Tab.~\ref{tab:ablation_num_epipolar_samples} shows that \(S=24\) provides the best overall balance.
 Increasing to \(S=32\) reduces translation error but degrades rotation and ADD/ADD-S, indicating that denser epipolar sampling does not necessarily yield better pose estimates.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Ablation on the number of sampled points \(S\) along each epipolar line.}
 \label{tab:ablation_num_epipolar_samples}
@@ -71,7 +71,7 @@ The effect is smaller for the symmetric screwdriver, where some rotational diffe
 This suggests that the auxiliary objectives provide stronger additional constraints when the object pose is less ambiguous.
 
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Ablation on the auxiliary training losses.}
 \label{tab:ablation_losses}
@@ -145,7 +145,7 @@ in translation.
 % This supports the role of calibrated epipolar constraints in cross-view fusion.
 This demonstrates the benefit of calibrated epipolar constraints in guiding multi-view feature interaction.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Ablation on the epipolar cross-view attention mechanism.}
 \label{tab:ablation_epipolar_attention}
@@ -212,7 +212,7 @@ ConvNeXt-Tiny performs better across all reported metrics, suggesting that
 the convolutional feature hierarchy is better suited to the dense
 silhouette features used by ECASP.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Ablation on the DINOv3 backbone architecture.}
 \label{tab:supp_ablation_backbone_arch}
@@ -268,7 +268,7 @@ fine-tuning for the ConvNeXt-Tiny backbone. Removing both adaptation
 mechanisms substantially degrades performance, showing that adapting the
 pretrained backbone to binary-mask inputs is important.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Ablation on LoRA and lightweight backbone fine-tuning.}
 \label{tab:supp_ablation_backbone_adapt}
@@ -325,7 +325,7 @@ balance, with the best drill ADD and rotation error and the best screwdriver
 rotation error. \(C=128\) remains competitive, while \(C=384\) provides no
 consistent benefit.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Ablation on the fusion dimension \(C\).}
 \label{tab:supp_ablation_fusion_dim}
@@ -393,7 +393,7 @@ We retain four views for their clear gains on the drill and comparability with
 prior MVPSP multi-view evaluations~\cite{haugaard2023episurfemb}.
 
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Ablation on the number of input views.}
 \label{tab:ablation_num_views}
