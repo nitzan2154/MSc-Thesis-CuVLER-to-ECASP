@@ -212,13 +212,13 @@ ConvNeXt-Tiny performs better across all reported metrics, suggesting that
 the convolutional feature hierarchy is better suited to the dense
 silhouette features used by ECASP.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Ablation on the DINOv3 backbone architecture.}
 \label{tab:supp_ablation_backbone_arch}
 \small
-\resizebox{\linewidth}{!}{
-\begin{tabular}{@{}lcccccc@{}}
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
 \multirow{2}{*}{Backbone}
 &
@@ -259,8 +259,7 @@ DINOv3 ConvNeXt-Tiny
 & \(\mathbf{3.76}\)
 \\
 \bottomrule
-\end{tabular}
-}
+\end{tabular*}
 \end{table}
 
 \noindent\textbf{Backbone adaptation.}
@@ -269,13 +268,13 @@ fine-tuning for the ConvNeXt-Tiny backbone. Removing both adaptation
 mechanisms substantially degrades performance, showing that adapting the
 pretrained backbone to binary-mask inputs is important.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Ablation on LoRA and lightweight backbone fine-tuning.}
 \label{tab:supp_ablation_backbone_adapt}
 \small
-\resizebox{\linewidth}{!}{
-\begin{tabular}{@{}lcccccc@{}}
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
 \multirow{2}{*}{Variant}
 &
@@ -316,8 +315,7 @@ LoRA + fine-tuning
 & \(\mathbf{3.76}\)
 \\
 \bottomrule
-\end{tabular}
-}
+\end{tabular*}
 \end{table}
 
 \noindent\textbf{Fusion dimension.}
@@ -327,13 +325,13 @@ balance, with the best drill ADD and rotation error and the best screwdriver
 rotation error. \(C=128\) remains competitive, while \(C=384\) provides no
 consistent benefit.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Ablation on the fusion dimension \(C\).}
 \label{tab:supp_ablation_fusion_dim}
 \small
 \setlength{\tabcolsep}{4.5pt}
-\begin{tabular}{@{}ccccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ccccccc@{}}
 \toprule
 \multirow{2}{*}{\(C\)}
 &
@@ -382,7 +380,7 @@ ADD-S \(\downarrow\)
 & \(4.34\)
 \\
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}
 
 % END SUPPLEMENTARY MATERIAL: Additional Ablations
