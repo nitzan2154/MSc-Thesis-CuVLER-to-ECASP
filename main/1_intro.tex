@@ -1,0 +1,34 @@
+\chapter{Introduction}
+\label{sec:intro}
+
+Accurate 6DoF object pose estimation enables applications such as robotic manipulation, augmented reality, and surgical navigation.
+Yet unlike a class label, bounding box, or segmentation mask, a 6DoF object pose cannot generally be annotated by sight.
+It requires a geometric object model and accurate object-to-camera alignment, making pose supervision costly, particularly under occlusion and in specialized environments.
+Synthetic rendering offers exact pose labels from CAD models, but RGB-based training introduces a synthetic-to-real gap through differences in texture, material, illumination, and background~\cite{tremblay2018deep}.
+This dependence is especially problematic for textureless or reflective objects, whose appearance provides weak and unstable pose cues.
+
+We therefore investigate calibrated multi-view silhouettes, which provide complementary geometric constraints without relying on texture or material appearance.
+Given the input binary masks, pose estimation is invariant to changes in color, texture, material, and illumination that leave the silhouettes unchanged.
+Binary masks can be rendered without photorealistic assets, substantially reducing the RGB synthetic-to-real gap.
+The remaining challenge is geometric: silhouettes contain no internal appearance cues and may be incomplete or ambiguous under occlusion and symmetry~\cite{laurentini1994visual,Guan2010}.
+Recovering pose from these incomplete silhouettes therefore requires jointly reasoning across all calibrated views.
+
+Our formulation decouples object segmentation from pose estimation.
+Since masks are easier to annotate than accurate 6DoF poses, a segmenter can be adapted independently to the target environment.
+We evaluate ECASP with benchmark masks to isolate pose recovery and separately examine predicted masks from a fine-tuned segmenter.
+
+We introduce ECASP, \emph{\textbf{E}pipolar \textbf{C}ross-\textbf{A}ttention for \textbf{S}ilhouette-Based \textbf{P}ose Estimation}, a calibrated multi-view model that estimates the 6DoF pose of known rigid objects from silhouettes under occlusion, Fig.~\ref{fig:teaser}.
+ECASP uses epipolar cross-view attention to fuse silhouette evidence according to camera geometry and a hybrid geometric--learned pose head to recover 6DoF pose.
+Despite being optimized exclusively on synthetic silhouettes and using no RGB appearance, ECASP is competitive with RGB-based multi-view methods on the real MVPSP surgical-object benchmark~\cite{hein2025surgicalnavigation}.
+
+This work underscores the following contributions:
+
+\begin{itemize}
+    \item We formulate calibrated multi-view 6DoF pose estimation from silhouettes, showing that CAD-rendered masks can support accurate real-data pose estimation without photorealistic rendering or domain randomization.
+
+    \item We develop a calibrated fusion architecture that adapts epipolar cross-view attention to multi-view silhouette features.
+
+    \item We evaluate the practical mask-input assumption using masks from a
+    fine-tuned segmenter and analyze robustness to characteristic segmentation
+    errors.
+\end{itemize}

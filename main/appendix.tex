@@ -1,0 +1,351 @@
+% \clearpage
+% \setcounter{page}{1}
+% \maketitlesupplementary
+
+\chapter{Appendix}
+\label{chap:appendix}
+
+% \textbf{
+% WARNING: do not forget to delete the supplementary pages from your submission
+% } % from main.tex
+
+
+% \section{Rationale}
+% \label{sec:rationale}
+% % 
+% Having the supplementary compiled together with the main paper means that:
+% % 
+% \begin{itemize}
+% \item The supplementary can back-reference sections of the main paper, for example, we can refer to \cref{sec:intro};
+% \item The main paper can forward reference sub-sections within the supplementary explicitly (e.g. referring to a particular experiment); 
+% \item When submitted to arXiv, the supplementary will already included at the end of the paper.
+% \end{itemize}
+% % 
+% To split the supplementary pages from the main paper, you can use \href{https://support.apple.com/en-ca/guide/preview/prvw11793/mac#:~:text=Delete%20a%20page%20from%20a,or%20choose%20Edit%20%3E%20Delete).}{Preview (on macOS)}, \href{https://www.adobe.com/acrobat/how-to/delete-pages-from-pdf.html#:~:text=Choose%20%E2%80%9CTools%E2%80%9D%20%3E%20%E2%80%9COrganize,or%20pages%20from%20the%20file.}{Adobe Acrobat} (on all OSs), as well as \href{https://superuser.com/questions/517986/is-it-possible-to-delete-some-pages-of-a-pdf-document}{command line tools}.
+
+\section{Additional details}
+\subsection{Utilized models}
+\label{subsec:Utilized-models}
+\begin{itemize}
+    \item DINO ViT-B/8 \cite {caron2021emerging}
+    \item DINO ViT-B/16 \cite {caron2021emerging}
+    \item DINO ViT-S/8 \cite {caron2021emerging}
+    \item DINO ViT-S/16 \cite {caron2021emerging}
+    \item DINOv2 ViT-S/14
+    \cite
+    {oquab2023dinov2}
+    \item DINOv2 ViT-B/14
+    \cite
+    {oquab2023dinov2}
+    
+\end{itemize}
+\subsection{Ablation results}
+In \Cref{tab:model_count_ablation}, 
+\Cref{tab:k_max-ablation-results} and
+\Cref{tab:tau_m_ablation-results} we present the specific results used to create \Cref{fig:tau_m_ablation}, \Cref{fig:K_value_ablation} and \Cref{fig:models_num_ablation}, respectively.
+ \begin{table}[!ht]
+    \centering
+    \begin{tabular}{p{2cm}|p{0.8cm}p{0.8cm}p{0.8cm}p{0.8cm}}
+    % \hline 
+    Model count & $AP^{box}$ & $AP_{50}^{box}$ & $AP_{75}^{box}$ & $AR_{100}^{box}$\tabularnewline
+    % \hline 
+    \hline 
+    \hfil 1 & 7.4 & 15.3 & 6.2 & 29.4\tabularnewline
+    % \hline 
+    \hfil 2 & 14.2 & 27 & 12.7 & 38\tabularnewline
+    % \hline 
+    \hfil 3 & 15.3 & 29.3 & 13.8 & 38.7\tabularnewline
+    % \hline 
+    \hfil 4 & 17.4 & 29.3 & 13.8 & 38.7\tabularnewline
+    % \hline 
+    \hfil 5 & 19.6 & 35.0 & 18.4 & 44\tabularnewline
+    % \hline 
+    \hfil 6 & \textbf{20.9} & \textbf{36.3} & \textbf{20.1} & \textbf{44.9}\tabularnewline
+    \hline 
+    \end{tabular}
+    \caption{Model count ablation results}
+    \label{tab:model_count_ablation}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{p{0.6cm}|p{0.8cm}p{0.8cm}p{0.8cm}p{0.8cm}}
+    % \hline 
+    $k_{max}$ & $AP^{box}$ & $AP_{50}^{box}$ & $AP_{75}^{box}$ & $AR_{100}^{box}$\tabularnewline
+    \hline 
+    % \midrule 
+    2 & 19.5 & 33.5 & 19 & 41.9\tabularnewline
+    % \hline 
+    3 & \textbf{20.9} & \textbf{36.3} & \textbf{20.1} & 44.9\tabularnewline
+    % \hline 
+    4 & 20.4 & 36.1 & 19.3 & \textbf{45.2}\tabularnewline
+    % \hline 
+    5 & 19.4 & 35 & 18.1 & 44.9\tabularnewline
+    \hline 
+    \end{tabular}
+    \caption{$k_{max}$ ablation results}
+    \label{tab:k_max-ablation-results}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{p{0.6cm}|p{0.8cm}p{0.8cm}p{0.8cm}p{0.8cm}}
+    % \hline 
+    $\tau^{m}$ & $AP^{box}$ & $AP_{50}^{box}$ & $AP_{75}^{box}$ & $AR_{100}^{box}$\tabularnewline
+    % \hline 
+    \hline 
+    0.1 & 17.7 & 30.6 & 17.1 & 37.2\tabularnewline
+    % \hline 
+    0.2 & \textbf{20.9} & \textbf{36.3} & \textbf{20.1} & \textbf{44.9}\tabularnewline
+    % \hline 
+    0.3 & 20.3 & 35.8 & 19.2 & 44.4\tabularnewline
+    % \hline 
+    0.4 & 19.2 & 35.1 & 17.8 & 43.3\tabularnewline
+    % \hline 
+    0.5 & 17.6 & 33.9 & 15.7 & 41.3\tabularnewline
+    \hline 
+    \end{tabular}
+    \caption{$\tau^m$ ablation results}
+    \label{tab:tau_m_ablation-results}
+\end{table}
+
+\section{Datasets}
+\textbf{COCO and COCO20K} \cite{lin2014microsoft} is a large-scale instance segmentation and object detection dataset containing approximately $118K$ images for training and another $5K$ for validation. Additionally, COCO has an unannotated split of $123K$ images. 
+COCO \texttt{20K} is a subset of the COCO \texttt{trainval2014} \cite{lin2014microsoft},
+accommodated from 19817 randomly sampled images, used for evaluation in \cite{simeoni2021localizing, vo2020toward, wang2022tokencut, wang2023cut}. We evaluate our models in a class-agnostic manner on COCO \texttt{val2017} and COCO \texttt{20K}. We use COCO-style average precision (AP) and average recall (AR) from object detection and segmentation tasks for evaluation.
+\\
+\textbf{Pascal VOC} \cite{everingham2010pascal} 
+is an object detection dataset widely used as a benchmark.  
+\\
+\textbf{OpenImages} V6 \cite{kuznetsova2020open}
+Unifies instance segmentation, object detection and image classification, visual relationship detection, and more, in a single dataset. We evaluate our method on its $42K$ images from the \texttt{val} split. 
+\\
+\textbf{Clipart1k} \cite{inoue2018cross}
+, which we refer to as 'Clipart', is an object detection dataset consisting of 1000 images from a clip art domain. We evaluate our model using all annotated images from this dataset, $traintest$.
+\\
+\textbf{Watercolor2K} \cite{inoue2018cross}
+, which we refer to as 'Watercolor', is an object detection dataset consisting of 2000 images from a watercolor painting domain. We evaluate our model using all annotated images from this dataset, $traintest$.
+\\
+\textbf{Comic2K} \cite{inoue2018cross}
+, which we refer to as 'Comic', is an object detection dataset consisting of 2000 images from a comic domain. We evaluate our model using all annotated images from this dataset, $traintest$.
+\\
+\textbf{LVIS} \cite{gupta2019lvis} (Large Vocabulary Instance Segmentation) is a large-scale dataset comprising $164K$ images featuring $2.2M$ high-quality instance segmentation masks. It covers over 1000 entry-level object categories, naturally forming a long-tail distribution of categories.
+
+\section{Addtinal results}
+
+\newgeometry{left=0.8cm, right=0.8cm}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{2.7cm}|p{0.6cm}p{0.75cm}|p{0.6cm}p{0.65cm}|p{0.6cm}p{0.75cm}|cc|p{0.65cm}c|p{0.6cm}p{0.6cm}|p{0.6cm}p{0.75cm}|}
+\multirow{2}{*}{Method}&\multicolumn{2}{c|}{COCO}&\multicolumn{2}{c|}{COCO20K}&\multicolumn{2}{c|}{VOC}&\multicolumn{2}{c|}{OpenImages}&\multicolumn{2}{c|}{Clipart}&\multicolumn{2}{c|}{Watercolor}&\multicolumn{2}{c|}{Comic}\\ \cline{2-15}
+&AP$_{75}$&AR&AP$_{75}$&AR&AP$_{75}$&AR&AP$_{75}$&AR&AP$_{75}$&AR&AP$_{75}$&AR&AP$_{75}$&AR\\ \hline
+Prev. SOTA &11.8&32.8&11.9&33.1&19.2&44&9.5&29.6&6&40.7&10.9&44.2&7.7&38.4\\
+CuVLER (ours)&11.8&32.8&11.9&33&21.2&46.5&11.4&30.5&6.9&42&15.9&47.4&11.5&41\\
+\textit{vs. prev. SOTA}&\textbf+0&\textbf+0&\textbf+0&\textbf-0.1&\textbf{+2}&\textbf{+2.5}&\textbf{+1.9}&\textbf{+0.9}&\textbf{+0.9}&\textbf{+1.3}&\textbf{+5}&\textbf{+3.2}&\textbf{+3.8}&\textbf{+2.6}\\
+\hline
+\end{tabular}
+\caption{The remaining reported results of our zero-shot unsupervised object detection performance versus the previous state-of-the-art model \cite{wang2023cut}. The presented models are trained in an unsupervised manner solely on ImageNet.}
+\label{tab:zeroshot-extra-results}
+\end{table}
+
+\restoregeometry
+
+% \begin{table*}
+%     \centering
+%     \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+%     \hline 
+%      & \multicolumn{4}{c}{CutLER} & \multicolumn{4}{c|}{CuVLER}\\
+%     \hline 
+%     Datasets & $AP^{box}$ & $AP_{50}^{box}$ & $AP_{75}^{box}$ & $AR_{100}^{box}$ & $AP^{box}$ & $AP_{50}^{box}$ & $AP_{75}^{box}$ & $AR_{100}^{box}$\\
+%     \hline 
+%     COCO & 12.3 & 21.9 & 11.8 & 32.8 & \textbf{12.6} & \textbf{23} & \textbf{11.8} & \textbf{32.8}\\
+%     \hline 
+%     COCO $\texttt{20K}$ & 12.5 & 22.4 & 11.9 & 33.1 & \textbf{12.7} & \textbf{23.5} & \textbf{11.9} & \textbf{33}\\
+%     \hline 
+%     VOC & 20.2 & 36.9 & 19.2 & 44 & \textbf{22.3} & \textbf{39.4} & \textbf{21.2} & \textbf{46.5}\\
+%     \hline 
+%     OpenImages & 9.7 & 17.3 & 9.5 & 29.6 & \textbf{11.6} & \textbf{19.6} & \textbf{11.4} & \textbf{30.5}\\
+%     \hline 
+%     Clipart & 8.7 & 21.1 & 6 & 40.7 & \textbf{9.3} & 20.8 & \textbf{6.9} & \textbf{42}\\
+%     \hline 
+%     WaterColor & 15.7 & 37.5 & 10.9 & 44.2 & \textbf{19} & \textbf{41.3} & \textbf{15.9} & \textbf{47.4}\\
+%     \hline 
+%     Comic & 12.2 & 30.4 & 7.7 & 38.4 & \textbf{14.6} & \textbf{32.2} & \textbf{11.5} & \textbf{41}\\
+%     \hline 
+%     \end{tabular}
+%     \caption{Extended results of zero-shot evaluation.}
+%     \label{tab:extra-zero-results}
+% \end{table*}
+On \Cref{tab:zeroshot-extra-results}, we can see additional results of a zero-shot evaluation of our CuVLER method and the results of CutLER, the previous SOTA. This table complement \Cref{tab:zeroshot}, with additional $AR^{box}_{100}$ and $AP^{box}_{75}$ metrics. We can see that our model suppressed CutLER across all the datasets in almost all metrics.
+
+% \begin{table*}
+%     \centering
+%     \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+%     \hline 
+%      & \multicolumn{8}{c|}{CutLER} & \multicolumn{8}{c|}{CuVLER$^{\dagger}$}\tabularnewline
+%     \hline 
+%     Datasets & $AP^{box}$ & $AP_{50}^{box}$ & $AP_{75}^{box}$ & $AR_{100}^{box}$ & $AP^{mask}$ & $AP_{50}^{mask}$ & $AP_{75}^{mask}$ & $AR_{100}^{mask}$ & $AP^{box}$ & $AP_{50}^{box}$ & $AP_{75}^{box}$ & $AR_{100}^{box}$ & $AP^{mask}$ & $AP_{50}^{mask}$ & $AP_{75}^{mask}$ & $AR_{100}^{mask}$\tabularnewline
+%     \hline 
+%     COCO & 12.3 & 21.9 & 11.8 & 32.8 & 9.7 & 18.9 & 9.2 & 27.1 & \textbf{12.8} & \textbf{23.5} & \textbf{12} & 32.2 & \textbf{10.4} & \textbf{20.4} & \textbf{9.6} & 26.8\tabularnewline
+%     \hline 
+%     COCO $\texttt{20K}$ & 12.5 & 22.4 & 11.9 & 33.1 & 10 & 19.6 & 9.2 & 27.4 & \textbf{13.1} & \textbf{24} & \textbf{12.3} & 32.6 & \textbf{10.7} & \textbf{21.1} & \textbf{9.7} & 27.2\tabularnewline
+%     \hline 
+%     LVIS & 4.5 & 8.4 & 3.9 & 21.8 & 3.5 & 6.7 & 3.2 & 18.7 & \textbf{4.7} & \textbf{8.9} & \textbf{4.1} & 20.8 & \textbf{3.8} & \textbf{7.2} & \textbf{3.4} & 17.9\tabularnewline
+%     \hline 
+%     \end{tabular}
+%     \caption{Unsupervised object detection and instance segmentation}
+% \end{table*}
+
+
+In \Cref{fig:supp_comparison}, we can visually observe the capabilities of VoteCut in generating superior detection and mask proposals, surpassing the previous SOTA methods. It is noteworthy that VoteCut succeeds in discovering multiple objects and assigns a confidence score to each proposal, a significant feature leveraged for subsequent training.
+
+% \begin{figure*}
+%     \centering
+% \includegraphics[height=0.2 \linewidth]{assets/votecut_images/ILSVRC2012_val_00049988_votecut.png}
+% \hspace{0.01\linewidth}
+% \includegraphics[height=0.2 \linewidth]{assets/votecut_images/ILSVRC2012_val_00007073_votecut.png}
+% \hspace{0.01\linewidth}
+% \includegraphics[height=0.2\linewidth]{assets/votecut_images/ILSVRC2012_val_00010332_votecut.png}
+% \\
+% \vspace{0.02\linewidth}
+% \includegraphics[height=0.2\linewidth]{assets/votecut_images/ILSVRC2012_val_00021528_votecut.png}
+% \hspace{0.01\linewidth}
+% \includegraphics[height=0.2\linewidth]{assets/votecut_images/ILSVRC2012_val_00029419_votecut.png}
+% \hspace{0.01\linewidth}
+% \includegraphics[height=0.2\linewidth]{assets/votecut_images/ILSVRC2012_val_00047499_votecut.png}
+% \\
+% \vspace{0.02 \linewidth}
+% \includegraphics[height=0.2\linewidth]{assets/votecut_images/ILSVRC2012_val_00037378_votecut.png}
+% \hspace{0.01\linewidth}
+% \includegraphics[height=0.2\linewidth]{assets/votecut_images/ILSVRC2012_val_00044795_votecut.png}
+% \hspace{0.01\linewidth}
+% \includegraphics[height=0.2\linewidth]{assets/votecut_images/ILSVRC2012_val_00046833_votecut.png}
+% \\
+% \vspace{0.02 \linewidth}
+% \includegraphics[height=0.32\textwidth]{assets/votecut_images/ILSVRC2012_val_00045174_votecut.png}
+% \hspace{0.01\linewidth}
+% \includegraphics[height=0.32\linewidth]{assets/votecut_images/ILSVRC2012_val_00016389_votecut.png}
+% \hspace{0.01\linewidth}
+% \includegraphics[height=0.32\linewidth]{assets/votecut_images/ILSVRC2012_val_00010438_votecut.png}
+% % \includegraphics[height=0.2\linewidth]{assets/votecut_images/ILSVRC2012_val_00021269_votecut.png}
+
+%     \caption{Visualization of VoteCut segmentation and bounding boxes on the ImageNet validation set.}
+%     \label{fig:enter-label}
+% \end{figure*}
+
+\begin{figure*}
+    \centering
+    \begin{subfigure}{0.3\linewidth}
+        \caption*{TokenCut}
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00007073_tokencut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00010332_tokencut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00010438_tokencut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00016389_tokencut.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\linewidth}
+        \caption*{MaskCut}
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00007073_cutler.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00010332_cutler.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00010438_cutler.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00016389_cutler.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\linewidth}
+        \caption*{VoteCut (Ours)}
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00007073_votecut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00010332_votecut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00010438_votecut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00016389_votecut.png}
+    \end{subfigure}
+\caption{Additinoal Visual illustration of VoteCut versus SOTA NCut-based methods performances on the ImageNet validation set. The VoteCut bounding box score
+is calculated according to \cref{eq:score}}
+\label{fig:supp_comparison}
+\end{figure*}
+\begin{figure*}
+\ContinuedFloat
+    \centering
+    \begin{subfigure}{0.3\linewidth}
+        \caption*{TokenCut}
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00021269_tokencut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00021528_tokencut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00029419_tokencut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00037378_tokencut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00044795_tokencut.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\linewidth}
+        \caption*{MaskCut}
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00021269_cutler.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00021528_cutler.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00029419_cutler.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00037378_cutler.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00044795_cutler.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\linewidth}
+        \caption*{VoteCut (Ours)}
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00021269_votecut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00021528_votecut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00029419_votecut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00037378_votecut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00044795_votecut.png}
+    \end{subfigure}
+\caption{Additinoal Visual illustration of VoteCut versus SOTA NCut-based methods performances on the ImageNet validation set. The VoteCut bounding box score
+is calculated according to \cref{eq:score}}
+\end{figure*}
+
+\begin{figure*}
+\ContinuedFloat
+    \centering
+    \begin{subfigure}{0.3\linewidth}
+        \caption*{TokenCut}
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00045174_tokencut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00047499_tokencut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00049988_tokencut.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\linewidth}
+        \caption*{MaskCut}
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00045174_cutler.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00047499_cutler.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00049988_cutler.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\linewidth}
+        \caption*{VoteCut (Ours)}
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00045174_votecut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00047499_votecut.png}
+        \\[1ex]
+        \includegraphics[width=\linewidth]{assets/comparison/ILSVRC2012_val_00049988_votecut.png}
+    \end{subfigure}
+\caption{Additinoal Visual illustration of VoteCut versus SOTA NCut-based methods performances on the ImageNet validation set. The VoteCut bounding box score
+is calculated according to \cref{eq:score}}
+\end{figure*}

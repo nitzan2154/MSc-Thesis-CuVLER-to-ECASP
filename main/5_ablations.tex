@@ -1,0 +1,256 @@
+\chapter{Ablations}
+\label{sec:ablations}
+We ablate the main design choices of ECASP on the MVPSP test set using the baseline checkpoint, the same synthetic-training protocol, and benchmark-provided real masks as in Sec.~\ref{sec:main_results}.
+All errors are in millimeters except \(\Delta R\), which is in degrees.
+
+\noindent\textbf{Number of epipolar samples.}
+Tab.~\ref{tab:ablation_num_epipolar_samples} shows that \(S=24\) provides the best overall balance.
+Increasing to \(S=32\) reduces translation error but degrades rotation and ADD/ADD-S, indicating that denser epipolar sampling does not necessarily yield better pose estimates.
+
+\begin{table}[htbp]
+\centering
+\caption{Ablation on the number of sampled points \(S\) along each epipolar line.}
+\label{tab:ablation_num_epipolar_samples}
+\small
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ccccccc@{}}
+\toprule
+\multirow{2}{*}{\(S\)}
+&
+\multicolumn{3}{c}{Drill}
+&
+\multicolumn{3}{c}{Screwdriver}
+\\
+\cmidrule(lr){2-4}
+\cmidrule(lr){5-7}
+&
+ADD \(\downarrow\)
+&
+\(\Delta t \downarrow\)
+&
+\(\Delta R \downarrow\)
+&
+ADD-S \(\downarrow\)
+&
+\(\Delta t \downarrow\)
+&
+\(\Delta R \downarrow\)
+\\
+\midrule
+\(16\)
+& \(5.62\)
+& \(1.24\)
+& \(3.34\)
+& \(2.78\)
+& \(2.67\)
+& \(4.27\)
+\\
+\(24\)
+& \(\mathbf{4.93}\)
+& \(1.33\)
+& \(\mathbf{2.88}\)
+& \(\mathbf{2.47}\)
+& \(2.02\)
+& \(\mathbf{3.76}\)
+\\
+\(32\)
+& \(6.05\)
+& \(\mathbf{1.23}\)
+& \(3.57\)
+& \(2.64\)
+& \(\mathbf{1.89}\)
+& \(4.07\)
+\\
+\bottomrule
+\end{tabular*}
+\end{table}
+
+\noindent\textbf{Auxiliary losses.}
+Tab.~\ref{tab:ablation_losses} shows that the auxiliary losses consistently improve the asymmetric drill, particularly ADD and rotation.
+The effect is smaller for the symmetric screwdriver, where some rotational differences are less observable under the evaluation symmetry.
+This suggests that the auxiliary objectives provide stronger additional constraints when the object pose is less ambiguous.
+
+
+\begin{table}[htbp]
+\centering
+\caption{Ablation on the auxiliary training losses.}
+\label{tab:ablation_losses}
+\small
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
+\toprule
+\multirow{2}{*}{Variant}
+&
+\multicolumn{3}{c}{Drill}
+&
+\multicolumn{3}{c}{Screwdriver}
+\\
+\cmidrule(lr){2-4}
+\cmidrule(lr){5-7}
+&
+ADD \(\downarrow\)
+&
+\(\Delta t \downarrow\)
+&
+\(\Delta R \downarrow\)
+&
+ADD-S \(\downarrow\)
+&
+\(\Delta t \downarrow\)
+&
+\(\Delta R \downarrow\)
+\\
+\midrule
+Full
+& \(\mathbf{4.93}\)
+& \(\mathbf{1.33}\)
+& \(\mathbf{2.88}\)
+& \(2.47\)
+& \(2.02\)
+& \(\mathbf{3.76}\)
+\\
+w/o \(\mathcal{L}_{\mathrm{mc}}\)
+& \(5.38\)
+& \(1.36\)
+& \(3.19\)
+& \(2.89\)
+& \(2.75\)
+& \(3.99\)
+\\
+w/o \(\mathcal{L}_{\mathrm{allo}}\)
+& \(5.50\)
+& \(1.37\)
+& \(3.24\)
+& \(2.61\)
+& \(2.00\)
+& \(3.82\)
+\\
+w/o both
+& \(5.55\)
+& \(1.36\)
+& \(3.30\)
+& \(\mathbf{2.43}\)
+& \(\mathbf{1.99}\)
+& \(3.90\)
+\\
+\bottomrule
+\end{tabular*}
+\end{table}
+
+
+\noindent\textbf{Epipolar cross-view attention.}
+Tab.~\ref{tab:ablation_epipolar_attention} shows that epipolar cross-view attention
+outperforms unconstrained cross-attention on all metrics, with the largest gains
+in translation.
+% This supports the role of calibrated epipolar constraints in cross-view fusion.
+This demonstrates the benefit of calibrated epipolar constraints in guiding multi-view feature interaction.
+
+\begin{table}[htbp]
+\centering
+\caption{Ablation on the epipolar cross-view attention mechanism.}
+\label{tab:ablation_epipolar_attention}
+\small
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
+\toprule
+\multirow{2}{*}{Variant}
+&
+\multicolumn{3}{c}{Drill}
+&
+\multicolumn{3}{c}{Screwdriver}
+\\
+\cmidrule(lr){2-4}
+\cmidrule(lr){5-7}
+&
+ADD \(\downarrow\)
+&
+\(\Delta t \downarrow\)
+&
+\(\Delta R \downarrow\)
+&
+ADD-S \(\downarrow\)
+&
+\(\Delta t \downarrow\)
+&
+\(\Delta R \downarrow\)
+\\
+\midrule
+Vanilla
+& \(6.59\)
+& \(2.50\)
+& \(3.54\)
+& \(2.87\)
+& \(3.14\)
+& \(4.11\)
+\\
+Epipolar
+& \(\mathbf{4.93}\)
+& \(\mathbf{1.33}\)
+& \(\mathbf{2.88}\)
+& \(\mathbf{2.47}\)
+& \(\mathbf{2.02}\)
+& \(\mathbf{3.76}\)
+\\
+\bottomrule
+\end{tabular*}
+\end{table}
+
+
+\noindent\textbf{Number of input views.}
+Tab.~\ref{tab:ablation_num_views} compares four views with the two-view OL+OR setting.
+Four views improve the drill across all metrics, whereas two views perform
+slightly better on the symmetric screwdriver, likely due to less informative
+or occluded additional views.
+We retain four views for their clear gains on the drill and comparability with
+prior MVPSP multi-view evaluations~\cite{haugaard2023episurfemb}.
+
+
+\begin{table}[htbp]
+\centering
+\caption{Ablation on the number of input views.}
+\label{tab:ablation_num_views}
+\small
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
+\toprule
+\multirow{2}{*}{Views}
+&
+\multicolumn{3}{c}{Drill}
+&
+\multicolumn{3}{c}{Screwdriver}
+\\
+\cmidrule(lr){2-4}
+\cmidrule(lr){5-7}
+&
+ADD \(\downarrow\)
+&
+\(\Delta t \downarrow\)
+&
+\(\Delta R \downarrow\)
+&
+ADD-S \(\downarrow\)
+&
+\(\Delta t \downarrow\)
+&
+\(\Delta R \downarrow\)
+\\
+\midrule
+OL+OR
+& \(6.29\)
+& \(1.46\)
+& \(3.53\)
+& \(\mathbf{2.31}\)
+& \(\mathbf{1.64}\)
+& \(\mathbf{3.33}\)
+\\
+L+OL+OR+R
+& \(\mathbf{4.93}\)
+& \(\mathbf{1.33}\)
+& \(\mathbf{2.88}\)
+& \(2.47\)
+& \(2.02\)
+& \(3.76\)
+\\
+\bottomrule
+\end{tabular*}
+\end{table}

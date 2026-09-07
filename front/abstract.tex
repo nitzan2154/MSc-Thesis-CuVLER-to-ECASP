@@ -1,0 +1,53 @@
+% This file contains the abstract part of your thesis - in English and
+% in Hebrew (within \abstractEnglish and \abstractHebrew respectively).
+%
+% Notes:
+% - This file uses the UTF-8 character set encoding for the Hebrew
+%   text not to get garbled. Keep it that way.
+% - Assuming your thesis is mainly in English, Graduate School 
+%   regulations mandate the following lengths for the abstracts:
+%
+%      Language    Min. Length   Max. Length
+%     ---------------------------------------
+%      English       200 words     500 words
+%      Hebrew        500 words   2,000 words
+%
+%   so that the Hebrew abstract typically has some content from
+%   the English introduction and an overview of the results, not
+%   present in the English; it is not just a translation.
+
+\abstractEnglish{
+
+Accurate 6DoF object pose estimation under occlusion commonly relies on RGB appearance, depth sensing, or costly real pose supervision, limiting deployment for textureless, reflective, and symmetric objects.
+We present ECASP, which estimates the pose of known rigid objects from calibrated multi-view binary masks alone.
+By operating on silhouettes, ECASP avoids direct dependence on color, texture, material, and illumination and can be trained using CAD-rendered masks without real images as pose-training inputs.
+
+ECASP combines epipolar cross-view attention, which fuses silhouette features according to camera geometry, with a hybrid pose head that integrates learned prediction and geometric triangulation.
+
+Despite discarding RGB appearance and being optimized only on synthetic
+silhouettes, ECASP is competitive with RGB-based multi-view methods on real
+samples from the MVPSP surgical-object benchmark and achieves the lowest
+translation error on the symmetric object.
+
+Evaluation with masks from a segmenter fine-tuned using only training-set mask annotations further validates the practical mask-input assumption.
+These results show that multi-view silhouette geometry can provide strong constraints for real-world 6DoF pose estimation without RGB appearance or depth input.
+
+} % end of English abstract
+
+
+\abstractHebrew{
+
+% Note that certain commands don't work that well in Hebrew "mode".
+% If this happens to you, try wrapping the command within a
+% \textenglish{ } - that may (or may not) help.
+
+מחקר זה מציג שיטה למציאת אובייקטים בתמונות ע"י שימוש במודלים שלמדו בצורה שאינה מפוקחת, קרי, ללא כל סימון או תיוג של אובייקטים בתמונות. מציאת אובייקטים בתמונה מועילה למשימות רבות כגון סיווג אובייקטים, זיהוי פעולות בוידאו, ניווט, רובוטיקה וכו'. אי-לכך, אתגר זה הינו חשוב בתחום הראייה הממוחשבת שכן לא פשוט להשיג את תיוגי האובייקטים בתמונות לעומת תמונות שאינן מתויגות אותן ניתן לאסוף בקלות יחסית ממרחבי האינטרנט, צילום ומאגרי תמונות אחרים.
+
+עבודות קודמות הראו כיצד ניתן לנצל מודל טרנספורמר שלמד בצורה שאינה מפוקחת על-מנת לחלץ אובייקטים בתמונה - 
+מחלצים מהטרנספורמר וקטור מייצג עבור כל משבצת בתמונה, בונים גרף קישוריות בין המשבצות על-ידי היטלי הוקטורים, מבצעים פירוק ספקטרלי לבעיית חיתוך גרף מנורמל \textenglish{(Normalized-graph-cuts)}, ולבסוף, מקבצים את הסגמנטים הבולטים לפי ערכי הוקטור העצמי השני הכי קטן שהתקבל. כמו-כן, הודגם כיצד ניתן לקחת את הסגמנטים שהתקבלו ולהשתמש בהם על-מנת ללמד מודל לזיהוי אובייקטים וכך לטייב את יכולות הגילוי.
+
+בעבודה זו אנו מציגים שיטה חדשה, \textenglish{CuVLER} (\textenglish{Cut-Vote-and-Learn}), המראה כיצד ניתן לשפר את שני השלבים הללו - שלב גילוי הסגמנטים ושלב לימוד המודל. עבור גילוי הסגמנטים פיתחנו מתודה בשם \textenglish{VoteCut}, בה אנו מדגימים כיצד ניתן לנצל מספר מודלי טרנספורמר ולקבל אוסף סגמנטים איכותי יותר בשביל שנוכל בהמשך לנצלו עבור שלב הלימוד. במתודה זו, אנו מחשבים עבור כל מודל את חיתוך הגרף המנורמל, ובעזרת קיבוץ מבוסס חפיפה אנו מקבצים סגמנטים דומים המתקבלים מהוקטורים העצמיים שקיבלנו. מכל מקבץ אנו מקבלים שני תוצרים - סגמנט סופי וניקוד. הסגמנט הסופי המתקבל מכל מקבץ מחושב על-ידי "הצבעה" על כל פיקסל, פיקסל יחשב כשייך לאובייקט אם ישנו קונצנזוס בין הסגמנטים במקבץ להיותו שייך. הניקוד שאנו נותנים עבור אותו סגמנט סופי גדל ביחס ישר לגודל המקבץ שלו כיוון שההיתכנות שהוא אכן מייצג אובייקט גדולה יותר.  בשלב השני, לימוד מודל הזיהוי, אנו מציגים פונקציית אופטימיזציה חדשה ברמת הסגמנט המתחשבת בניקוד שמתלווה לכל סגמנט. באופן כזה, בניגוד לעבודות קודמות, אנו מסוגלים להתחשב במספר סגמנטים רב בתהליך הלימוד שכן הניקוד גורם למודל להתחשב יותר בסגמנטים שסביר שהם אכן אובייקטים. בנוסף על כך, לעומת עבודות קודמות, בשיטה שלנו אנו מסוגלים לבצע "לימוד עצמי" מאוסף תמונות ששונה מהדומיין שממנו הטרנספורמרים למדו בצורה שאינה מפוקחת ובכך לטייב את יכולות הגילוי. אנו מייצרים סגמנטים מאוסף תמונות של דומיין אחר על-ידי מודל הזיהוי ומשתמשים באוסף הזה כדי ללמד מודל נוסף בעזרת פונקציית האופטימיזציה שלנו. בתהליך ה"לימוד העצמי" הניקוד עבור הפונקציה נלקח מפלט המודל הקודם. 
+
+על-מנת להעריך את המתודה שלנו בחנו אותה בשלושה תרחישים שונים - בתוך הדומיין, מחוץ לדומיין ללא שימוש בתמונות נוספות ומחוץ לדומיין בעזרת שימוש בתמונות מדומיין המטרה. בתוך הדומיין הדגמנו שיפור משמעותי לעומת השיטות הקודמות הן בשלב גילוי הסגמנטים הראשוני והן לאחר שלב לימוד המודל. היכולת לגלות אובייקטים בצורה טובה גם ללא כל שלב נוסף של לימוד מודל זיהוי חשובה גם היא, שכן כאשר מדובר באוסף תמונות גדול מאוד (לדוגמה, אוסף כל התמונות באינטרנט) היכולת לבצע את שלב הלימוד הינה מוגבלת וכרוכה בהקצאת משאבי חישוב וזמן רבים ולעיתים אף אינה אפשרית. מחוץ לדומיין, בהינתן אותו סט תמונות ללימוד, הראנו שהמודל אותו לימדנו בשיטת \textenglish{CuVLER} מדגים ביצועים גבוהים יותר לעומת השיטות הקודמות עבור שבעה דומיינים שונים. תוצאה זו מראה שאיכות גילוי האובייקטים במתודה שפיתחנו מתעלה על העבודות הקודמות ולא תלויה רק בדומיין ספציפי כלשהו. לבסוף, ביצענו "לימוד עצמי" על שלושה דומיינים שונים והדגמנו כיצד גם בתצורה זו אנו מקבלים זיהוי אובייקטים איכותי יותר משיטות קודמות.
+
+} % end of Hebrew abstract

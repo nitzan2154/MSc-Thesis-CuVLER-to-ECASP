@@ -1,0 +1,24 @@
+\chapter{Related work}
+\label{sec:relatedwork}
+
+\textbf{6DoF Object Pose Estimation.}
+RGB-based methods estimate 6DoF pose through direct regression or detection-style formulations~\cite{xiang2018posecnn,kehl2017ssd6d}, while learned--geometric approaches predict keypoints or dense 2D--3D correspondences and recover pose with PnP~\cite{peng2019pvnet,hodan2020epos,su2022zebrapose,haugaard2022surfemb,di2021sopose,wang2021gdrnet}.
+Render-and-compare methods further refine pose by comparing observations with rendered hypotheses~\cite{li2018deepim,labbe2022megapose,wen2024foundationpose}, and RGB-D methods incorporate measured geometry~\cite{wang2019densefusion,he2021ffb6d,he2020pvn3d}.
+Although highly effective, these approaches depend on RGB appearance, depth sensing, or the visual realism of synthetic training data.
+Generalizable pose methods address low-textured or novel objects through reference-image matching, learned correspondences, or SfM-derived representations~\cite{liu2022gen6d,lin2024sam6d,nguyen2024gigapose,sun2022onepose,he2022oneposeplusplus}.
+ECASP instead assumes a CAD model and uses calibrated multi-view binary masks as its pose-estimation input.
+
+\noindent\textbf{Multi-View Pose Estimation and Epipolar Fusion.}
+Multi-view pose methods combine complementary observations to mitigate the effects of occlusion and resolve pose ambiguities through calibrated cross-view reasoning.
+CosyPose~\cite{labbe2020cosypose} aggregates and refines RGB pose hypotheses across views, whereas EpiSurfEmb~\cite{haugaard2023episurfemb} combines RGB correspondence distributions using epipolar geometry.
+MVTOP~\cite{ranftl2026mvtop} performs early multi-view feature fusion, and Khalil et al.~\cite{khalil2025featureexchange} extend EpiSurfEmb with a Feature Exchange Transformer that performs coarse-to-fine, multi-layer fusion using self-attention and epipolar cross-attention.
+More generally, Epipolar Transformers~\cite{he2020epipolar} showed that calibrated epipolar geometry can guide cross-view feature aggregation by restricting feature sampling to epipolar lines.
+Beyond pose estimation, SPAD~\cite{kant2024spad} combines Pl\"ucker-ray encoding with epipolar attention for multi-view generation, while multi-view stereo networks fuse calibrated features through cost volumes or transformer-based aggregation~\cite{yao2018mvsnet,ding2022transmvsnet,liao2022wtmvsnet}.
+ECASP adapts these geometry-aware fusion ideas to silhouette-only pose estimation without explicit depth hypotheses or RGB correspondence distributions.
+
+\noindent\textbf{Silhouette-Based Pose Estimation and Synthetic-to-Real Transfer.}
+Silhouettes have long provided geometric constraints for multi-view shape understanding through visual hulls and occlusion reasoning~\cite{laurentini1994visual,Guan2010}.
+Kasten et al.~\cite{kasten2023multiviewpose} recover relative camera poses from collections of object silhouettes.
+More recent silhouette-only methods estimate 6DoF pose by matching rendered silhouettes~\cite{cui2024stipose} or precomputed silhouette shapes to an observed mask~\cite{sengupta2026gloptipos}.
+ECASP instead learns feed-forward object-pose estimation from calibrated multi-view silhouettes under occlusion.
+Whereas synthetic-to-real pipelines often rely on photorealistic rendering~\cite{denninger2019blenderproc} or domain randomization~\cite{tobin2017domainrandomization}, ECASP is optimized on CAD-rendered masks, reducing appearance-related transfer factors while retaining dependence on object shape, pose distribution, camera calibration, mask quality, and occlusion.

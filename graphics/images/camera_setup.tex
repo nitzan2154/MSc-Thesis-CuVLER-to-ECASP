@@ -1,0 +1,109 @@
+
+\begin{tikzpicture}[x=1cm,y=1cm,line cap=round,line join=round]
+
+% ------------------------------------------------
+% Colors
+% ------------------------------------------------
+\definecolor{bgcol}{RGB}{248,247,242}
+\definecolor{outerline}{RGB}{100,108,160}
+\definecolor{innerfill}{RGB}{226,224,241}
+\definecolor{camfill}{RGB}{48,48,50}
+\definecolor{textcol}{RGB}{0,0,0}
+\definecolor{objfill}{RGB}{180,183,176}
+\definecolor{objline}{RGB}{120,123,118}
+
+% ------------------------------------------------
+% Main rectangles as named nodes
+% ------------------------------------------------
+\node[
+    draw=outerline,
+    fill=bgcol,
+    line width=1pt,
+    minimum width=5.8cm,
+    minimum height=2.4cm,
+    inner sep=0
+] (outer) at (4.65,2.55) {};
+
+\node[
+    draw=outerline,
+    fill=innerfill,
+    line width=1pt,
+    minimum width=3.8cm,
+    minimum height=1.5cm,
+    inner sep=0
+] (inner) at (4.00,2.55) {};
+
+% ------------------------------------------------
+% Generic object/blob in the middle
+% ------------------------------------------------
+\begin{scope}[shift={(inner.center)}, scale=0.72]
+    \fill[objfill]
+        (-0.85,-0.08)
+        .. controls (-0.78,0.32) and (-0.38,0.52) .. (0.00,0.44)
+        .. controls (0.36,0.56) and (0.73,0.26) .. (0.78,-0.02)
+        .. controls (0.84,-0.34) and (0.46,-0.52) .. (0.10,-0.46)
+        .. controls (-0.28,-0.58) and (-0.72,-0.38) .. (-0.85,-0.08)
+        -- cycle;
+
+    \draw[objline, line width=0.8pt]
+        (-0.85,-0.08)
+        .. controls (-0.78,0.32) and (-0.38,0.52) .. (0.00,0.44)
+        .. controls (0.36,0.56) and (0.73,0.26) .. (0.78,-0.02)
+        .. controls (0.84,-0.34) and (0.46,-0.52) .. (0.10,-0.46)
+        .. controls (-0.28,-0.58) and (-0.72,-0.38) .. (-0.85,-0.08);
+
+    \draw[objline!70, line width=0.45pt]
+        (-0.45,0.18) .. controls (-0.15,0.28) and (0.15,0.24) .. (0.42,0.10);
+    \draw[objline!70, line width=0.45pt]
+        (-0.40,-0.05) .. controls (-0.08,0.03) and (0.20,-0.01) .. (0.50,-0.12);
+\end{scope}
+
+% ------------------------------------------------
+% Camera icon
+% Placement point = center of the front face
+% Icon points along +x before rotation
+% ------------------------------------------------
+\providecommand{\camicon}[3]{%
+\begin{scope}[shift={#1}, rotate=#2, scale=#3]
+    % body
+    \fill[camfill, rounded corners=0.09cm]
+        (-0.78,-0.22) rectangle (-0.28,0.22);
+
+    % cone
+    \path[fill=camfill]
+        (-0.28,-0.14) -- (0.00,-0.28) -- (0.00,0.28) -- (-0.28,0.14) -- cycle;
+\end{scope}
+}
+
+% ------------------------------------------------
+% Camera positions relative to outer rectangle
+% ------------------------------------------------
+\coordinate (camOL) at ($(outer.north west)+(-0.02,0.28)$);
+\coordinate (camOR) at ($(outer.north east)+(-1.15,0.28)$);
+\coordinate (camR)  at ($(outer.east)+(-1.15,0.00)$);
+\coordinate (camL)  at ($(outer.south west)+(-0.02,-0.28)$);
+
+% Draw cameras
+\camicon{(camOL)}{-35}{0.75}
+\camicon{(camOR)}{215}{0.75}
+\camicon{(camR)}{180}{0.75}
+\camicon{(camL)}{35}{0.75}
+
+% ------------------------------------------------
+% Labels close to cameras
+% ------------------------------------------------
+\node[anchor=south, text=textcol]
+    at ($(camOL)+(0.45,0.34)$) {\textbf{O}pposite \textbf{L}eft};
+
+\node[anchor=south, text=textcol]
+    at ($(camOR)+(0.00,0.34)$) {\textbf{O}pposite \textbf{R}ight};
+
+\node[anchor=west, text=textcol]
+    at ($(camR)+(-0.25,-0.70)$) {\textbf{R}ight};
+
+\node[anchor=west, text=textcol]
+    at ($(camL)+(0.10,-0.12)$) {\textbf{L}eft};
+
+
+
+\end{tikzpicture}

@@ -1,0 +1,241 @@
+\chapter{Method}
+\label{sec:method}
+As shown in Fig.~\ref{fig:architecture}, ECASP takes as input multi-view binary masks together with camera calibration \((K, T)\).
+Each mask is cropped, resized, and encoded by a shared DINOv3~\cite{simeoni2025dinov3} backbone, followed by projection to the fusion dimension to obtain a per-view feature map.
+A Pl\"ucker-ray positional encoding, computed from the camera calibration, is then added to each feature map.
+ECASP enriches each view through epipolar cross-view attention, which constrains cross-view interactions to corresponding epipolar lines in the other views.
+The enriched per-view features are combined by weighted aggregation, producing a single multi-view representation.
+This representation together with the enriched feature maps are passed to a hybrid pose head, which regresses rotation and estimates translation by combining geometric triangulation with a learned residual correction.
+During training, ECASP additionally uses mask-completion and allocentric-rotation objectives.
+
+\section{Problem Setup}
+\label{sec:problem_setup}
+ECASP takes as input \(N\) calibrated views \(V=\{v_i\}_{i=0}^{N-1}\) of a known rigid target object with an associated CAD model.
+Each view \(v_i \in V\) provides a binary instance mask \(M_{v_i} \in \{0,1\}^{H_{v_i} \times W_{v_i}}\), camera intrinsics \(K_{v_i} \in \mathbb{R}^{3\times3}\), and an extrinsic transform \(T_{v_0\rightarrow v_i} \in SE(3)\) from the reference camera frame to view \(v_i\).
+We assume a standard pinhole camera model, with pixel coordinates defined relative to the top-left corner of the image canvas.
+Without loss of generality, we denote the reference view by \(v_0\), so \(T_{v_0\rightarrow v_0}=I\).
+The reference camera may vary across samples, as described in Sec.~\ref{sec:reference_view_protocol}.
+
+The network outputs the object pose \((R,t)\), where \(R \in SO(3)\) and \(t \in \mathbb{R}^3\), expressed in the reference camera frame.
+The pose maps object-frame coordinates to the reference camera frame: \(X_{v_0} = R X_{\mathrm{obj}} + t\).
+At inference, ECASP requires only binary masks and camera calibration.
+
+\section{Per-View Mask Encoding}
+\label{sec:encoding}
+
+\paragraph{Preprocessing.}
+For each view \(v_i\), we crop the foreground region from the input mask \(M_{v_i}\), resize it while preserving the aspect ratio, and pad it to a fixed-size canvas.
+Since preprocessing changes the image coordinate system, we update the camera intrinsics accordingly and define a virtual intrinsic matrix \(\tilde{K}_{v_i}\) on the preprocessed canvas.
+All subsequent geometric operations, including Pl\"ucker-ray construction, fundamental-matrix computation, epipolar sampling, and DLT triangulation, use \(\tilde{K}_{v_i}\).
+To preserve spatial information affected by cropping, we define for each view a crop descriptor \(c_{v_i}=[c_x^i,c_y^i,f_x^i,f_y^i,s^i]\), where \(c_x^i\) and \(c_y^i\) encode the crop-induced principal-point offset, \(f_x^i\) and \(f_y^i\) are the focal lengths on the preprocessed canvas, and \(s^i\) is the resize scale.
+The descriptors from all views are concatenated and used to condition the pose head.
+Full details are provided in the supplementary material.
+
+\paragraph{Backbone encoding.}
+Each preprocessed binary mask is encoded by a shared DINOv3-pretrained ConvNeXt-Tiny backbone~\cite{simeoni2025dinov3,liu2022convnext}, adapted to the binary-mask domain with LoRA~\cite{hu2022lora} and lightweight fine-tuning.
+Specifically, we fine-tune the convolutional stem and LayerNorm parameters to further adapt the backbone to binary-mask inputs without destabilizing the pretrained representation.
+Since the backbone expects three input channels, the binary mask is replicated across channels and normalized using the pretrained backbone statistics.
+We use the third-stage feature map and project it with a \(1\times1\) convolution to the fusion dimension \(C\), obtaining \(F_{v_i}\in\mathbb{R}^{C\times H'\times W'}\).
+
+
+
+\paragraph{Pl\"ucker-ray positional encoding.}
+Before epipolar cross-view attention, Pl\"ucker-ray positional encoding~\cite{sitzmann2021lightfield,kant2024spad} is added to each feature map \(F_{v_i}\).
+For each feature location, we back-project the corresponding canvas pixel using the virtual intrinsics \(\tilde K_{v_i}\) and express the resulting ray in the reference frame using calibrated extrinsics.
+The ray is represented by Pl\"ucker coordinates \((d,m)\in\mathbb{R}^6\), where \(o\in\mathbb{R}^3\) is the camera center, \(d\in\mathbb{R}^3\) is the normalized ray direction, and \(m=o\times d\) is its moment.
+A small MLP maps the ray representation to \(C\) channels and adds it to \(F_{v_i}\), injecting calibrated camera-ray geometry.
+The exact coordinate-frame convention is provided in the supplementary material.
+
+
+\section{Epipolar Cross-View Attention.}
+\label{sec:fusion}
+
+\paragraph{Overview.}
+The epipolar cross-view attention module enriches the \(N\) per-view feature maps \(\{F_{v_i}\}_{i=0}^{N-1}\) by exchanging information across views, with cross-view interactions constrained by epipolar geometry.
+This constrains the correspondence search without requiring explicit depth hypotheses or a cost volume.
+For a query view \(v_i\), tokens from \(F_{v_i}\) attend to features sampled from the remaining feature maps \(\{F_{v_j}\}_{j\ne i}\) along the corresponding calibrated epipolar lines (Fig.~\ref{fig:epipolar_attention}).
+Each view is treated as a query view, producing enriched feature maps \(\{\hat{F}_{v_i}\}_{i=0}^{N-1}\).
+
+
+\paragraph{Epipolar sampling.}
+For each query-source pair \((v_i,v_j)\), with \(i \neq j\), we compute the relative transform:
+\begin{equation}
+T_{v_i\rightarrow v_j}=T_{v_0\rightarrow v_j}T_{v_0\rightarrow v_i}^{-1}.
+\end{equation}
+From this transform and the virtual intrinsics \(\tilde{K}_{v_i},\tilde{K}_{v_j}\),
+we form the Fundamental matrix \(\mathbf{F}_{ij}\)~\cite{hartley2004multipleview}.
+For each homogeneous query location \(\mathbf{p}\) on the canvas of view \(v_i\), the corresponding epipolar line in source view \(v_j\) is \(\ell_{ij}(\mathbf{p})=\mathbf{F}_{ij}\mathbf{p}\).
+We sample \(S\) points uniformly along the segment where this line intersects the source-view canvas bounds, as illustrated in Fig.~\ref{fig:epipolar_attention}.
+The sampled canvas coordinates are mapped to the feature grid, and source features are obtained by bilinear interpolation of \(F_{v_j}\).
+These samples provide \(S\) candidate key/value tokens per query location and source view.
+
+\paragraph{Epipolar attention.}
+For each query view \(v_i\), the \(S\) samples from each of the \(N-1\) source views are concatenated, yielding \(S(N-1)\) candidate tokens per query location.
+This design is inspired by prior work on epipolar feature aggregation~\cite{he2020epipolar}.
+As shown in Fig.~\ref{fig:epipolar_attention}, these tokens serve as keys and values in a multi-head cross-attention block~\cite{vaswani2017attention}, while queries are taken from \(F_{v_i}\).
+Let \(f_{v_i,p}\in\mathbb{R}^{C}\) denote the query feature at location \(p\) in view \(v_i\), and let \(\mathcal{S}_{v_i,p}\in\mathbb{R}^{S(N-1)\times C}\) contain the corresponding epipolar samples from all source feature maps.
+For one attention head, we compute:
+\begin{equation}
+\begin{gathered}
+q_{v_i,p} = f_{v_i,p}W_Q, \; K_{v_i,p} = \mathcal{S}_{v_i,p}W_K, \; V_{v_i,p} = \mathcal{S}_{v_i,p}W_V, \\
+\operatorname{Attn}(f_{v_i,p},\mathcal{S}_{v_i,p})
+=
+\operatorname{softmax}\!\left(
+\frac{q_{v_i,p}K_{v_i,p}^{\top}}{\sqrt{d}}
+\right)V_{v_i,p}.
+\end{gathered}
+\end{equation}
+Here, \(W_Q\), \(W_K\), and \(W_V\) are learned query, key, and value projections, respectively, and \(d\) is the attention-head dimension.
+The outputs of all attention heads are concatenated and projected back to the feature dimension.
+Applying the same operation with each view as the query produces enriched feature maps \(\{\hat{F}_{v_i}\}_{i=0}^{N-1}\).
+
+\section{Weighted Aggregation}
+% \paragraph{Confidence-weighted aggregation.}
+\label{sec:aggregation}
+Following epipolar cross-view attention, the enriched per-view features \(\{\hat{F}_{v_i}\}_{i=0}^{N-1}\) are combined into a single multi-view representation \(F_{\mathrm{agg}}\in\mathbb{R}^{C\times H'\times W'}\) using learned weighted aggregation.
+At each spatial location \((h,w)\), the model assigns one scalar weight \(w_{v_i,h,w}\) to each view.
+A spatial routing head predicts \(z^{\mathrm{loc}}_{v_i,h,w}\) from the local enriched features, while a view-confidence head predicts the global logit \(z^{\mathrm{view}}_{v_i}\) for each view.
+The two logits are combined and normalized across views:
+\begin{equation}
+w_{v_i,h,w}
+=
+\operatorname{softmax}_{i}\!\left(
+z^{\mathrm{loc}}_{v_i,h,w}
++
+z^{\mathrm{view}}_{v_i}
+\right).
+\end{equation}
+The aggregated feature at location \((h,w)\) is then
+\begin{equation}
+F^{\,\prime}_{\mathrm{agg},:,h,w}=
+\sum_{i=0}^{N-1}
+w_{v_i,h,w}\,\hat{F}_{v_i,:,h,w},
+\end{equation}
+The resulting representation is then refined through a residual block:
+\begin{equation}
+F_{\mathrm{agg}}=
+F^{\,\prime}_{\mathrm{agg}}
++
+g\bigl(F^{\,\prime}_{\mathrm{agg}}\bigr),
+\end{equation}
+where \(g\) is a lightweight residual refinement block.
+Both logit heads are zero-initialized, so aggregation starts from uniform view averaging and learns view-dependent weighting from the training objective.
+
+
+\section{Hybrid Pose Head}
+\label{sec:pose_head}
+
+\paragraph{Overview.}
+The hybrid pose head, illustrated in Fig.~\ref{fig:hybrid_pose_head}, estimates the object pose \((R,t)\) in the reference camera frame from the aggregated representation \(F_{\mathrm{agg}}\) and the per-view enriched features \(\{\hat{F}_{v_i}\}_{i=0}^{N-1}\).
+A regression branch predicts rotation directly.
+Translation uses a hybrid design: a geometric branch triangulates the CAD origin to obtain \(t_{\mathrm{tri}}\), while a learned branch predicts a per-sample gated residual correction \(r\).
+The final translation combines the triangulated estimate with the gated residual.
+
+\paragraph{Rotation branch.}
+\(F_{\mathrm{agg}}\) is first processed by a rotation-specific squeeze trunk, implemented as a lightweight \(1\times1\)-convolutional bottleneck, and then modulated by an AdaLN-Zero conditioner~\cite{peebles2023dit}.
+The conditioner predicts per-channel scale and shift parameters \((\gamma,\beta)\) from the concatenated crop descriptors \([c_{v_0},\ldots,c_{v_{N-1}}]\).
+A learnable-query attention pool~\cite{lee2019set} summarizes the spatial tokens of the conditioned rotation feature map, producing a global feature \(f^{\mathrm{main}}\).
+A separate learnable-query attention pool jointly summarizes the enriched per-view maps by treating \(\{\hat{F}_{v_i}\}_{i=0}^{N-1}\) as a single set of \(NH'W'\) tokens, producing a multi-view feature \(f^{\mathrm{view}}\in\mathbb{R}^{d}\).
+This feature provides complementary rotation cues from the enriched views that may be weakened by aggregation.
+The feature \([f^{\mathrm{main}},f^{\mathrm{view}},e_{\mathrm{obj}}]\), where \(e_{\mathrm{obj}}\) is a learnable object-ID embedding, is mapped by an MLP to a continuous 6D rotation representation~\cite{zhou2019rotationcontinuity}.
+Gram--Schmidt orthonormalization maps the 6D representation to \(R\in\mathrm{SO}(3)\).
+
+\paragraph{Translation residual branch.}
+\(F_{\mathrm{agg}}\) is processed by a separate translation-specific squeeze trunk and AdaLN-Zero conditioner using the same concatenated crop descriptors.
+The conditioned translation feature map is augmented with normalized coordinate channels, spatially reduced by convolutional layers, and flattened.
+Two heads predict a lateral residual \(r_{xy}\in\mathbb{R}^{2}\) and a depth residual \(r_z\in\mathbb{R}\), which are concatenated into \(r\in\mathbb{R}^{3}\).
+A learned per-sample gate scales the residual before it is added to the geometric translation estimate, as described in Sec.~\ref{sec:confidence_gated_fusion}.
+
+\paragraph{Geometric translation via single-point triangulation.}
+The geometric branch estimates translation by triangulating the CAD origin from its predicted 2D projections.
+A shared keypoint head predicts a single-channel heatmap at feature resolution \(H'\times W'\) from each enriched feature map \(\hat{F}_{v_i}\).
+A spatial soft-argmax~\cite{nibali2018numerical} yields a continuous feature-grid location, which is mapped to the preprocessed canvas to obtain \(\hat{p}_{v_i}\in\mathbb{R}^{2}\).
+Since the CAD origin satisfies \(X_{\mathrm{obj}}=0\), its position in the reference camera frame is exactly the object translation.
+Given the predicted points \(\{\hat{p}_{v_i}\}_{i=0}^{N-1}\) and the calibrated projection matrices \(P_{v_i}=\tilde{K}_{v_i}[R_{v_0\rightarrow v_i}\mid t_{v_0\rightarrow v_i}]\), we recover the 3D point by standard DLT triangulation~\cite{hartley2004multipleview}, followed by dehomogenization.
+The resulting point directly gives the geometric translation estimate \(t_{\mathrm{tri}}\in\mathbb{R}^{3}\) in the reference camera frame.
+
+\paragraph{Gated translation residual.}
+\label{sec:confidence_gated_fusion}
+The residual \(r\) is combined with the geometric estimate \(t_{\mathrm{tri}}\) using a learned per-sample scalar gate,
+\begin{equation}
+t = t_{\mathrm{tri}} + w_{\mathrm{gate}} r,
+\qquad
+w_{\mathrm{gate}} = \sigma\bigl(\phi(h_{\mathrm{trans}})\bigr).
+\end{equation}
+Here, \(h_{\mathrm{trans}}\) is the translation-trunk feature, \(\phi\) predicts one scalar logit per sample, and \(\sigma\) maps its output to \(w_{\mathrm{gate}}\in[0,1]\).
+The zero-initialized residual head starts from the triangulated estimate, while the learned gate enables sample-dependent refinement through the residual correction.
+
+\paragraph{Auxiliary heads.}
+Two auxiliary heads are used only during training and discarded at inference. 
+A \emph{mask-completion head}, consisting of a small transformer decoder followed by an upsampling refinement block, predicts an \(H\times W\) amodal mask from each \(\hat{F}_{v_i}\).
+An \emph{allocentric rotation head}~\cite{kundu2018drcnn}, consisting of a small MLP applied to a globally pooled feature from each \(\hat{F}_{v_i}\), predicts a per-view allocentric rotation, i.e., relative to each camera's viewing direction.
+Both are supervised by the auxiliary losses in Sec.~\ref{sec:loss}.
+
+\section{Training Objective}
+\label{sec:loss}
+
+\noindent\textbf{Overview.}
+ECASP is trained end-to-end with a composite objective combining the main pose losses, auxiliary losses, and a routing-entropy regularizer:
+\begin{equation}
+\begin{aligned}
+\mathcal{L}
+&= \lambda_{\mathrm{rot}}\mathcal{L}_{\mathrm{rot}}^{\mathrm{sym}}
+ + \lambda_{\mathrm{trans}}\mathcal{L}_{\mathrm{trans}}
+ + \lambda_{\mathrm{kp}}\mathcal{L}_{\mathrm{kp}}
+ + \lambda_{\mathrm{allo}}\mathcal{L}_{\mathrm{allo}} \\
+&\quad
+ + \lambda_{\mathrm{mc}}\mathcal{L}_{\mathrm{mc}}
+ - \lambda_{\mathrm{ent}}H(w).
+\end{aligned}
+\label{eq:total_loss}
+\end{equation}
+Here, \(H(w)\) denotes the entropy of the per-location routing distribution from Sec.~\ref{sec:fusion}.
+The mask-completion loss is linearly ramped over the first \(E_{\mathrm{warm}}\) epochs to stabilize early pose learning.
+
+\paragraph{Main pose losses.}
+\label{sec:main_pose_losses}
+Rotation is supervised with a symmetry-aware geodesic loss on \(\mathrm{SO}(3)\):
+\begin{equation}
+\mathcal{L}_{\mathrm{rot}}^{\mathrm{sym}}(R,R^{\mathrm{gt}})
+=
+\min_{S\in\mathcal{G}_c}
+d_{\mathrm{SO}(3)}\!\left(R,R^{\mathrm{gt}}S\right),
+\end{equation}
+where \(S\) is an object-frame symmetry transform in the symmetry set \(\mathcal{G}_c\). Translation is supervised in the reference camera frame using a decomposed \(\ell_1\) loss over lateral and depth components:
+\begin{equation}
+\mathcal{L}_{\mathrm{trans}}(t,t^{\mathrm{gt}})
+=
+w_{xy}\left\|t_{xy}-t_{xy}^{\mathrm{gt}}\right\|_1
++
+w_z\left|t_z-t_{z}^{\mathrm{gt}}\right|.
+\end{equation}
+
+\paragraph{Auxiliary losses.}
+In addition to the main pose losses, ECASP uses three auxiliary losses during training.
+The keypoint-origin loss \(\mathcal{L}_{\mathrm{kp}}\) supervises the per-view 2D projections \(\{\hat{p}_{v_i}\}_{i=0}^{N-1}\) of the CAD origin using a smooth-\(\ell_1\) loss.
+The allocentric rotation loss \(\mathcal{L}_{\mathrm{allo}}\) supervises the allocentric head using the symmetry-aware geodesic loss from Sec.~\ref{sec:main_pose_losses}.
+The mask-completion loss \(\mathcal{L}_{\mathrm{mc}}\) combines binary cross-entropy, occluded-region binary cross-entropy, and soft Dice loss~\cite{milletari2016vnet}, where the occluded-region term is evaluated on object pixels present in the full mask but absent from the visible input mask.
+Full loss definitions are provided in the supplementary material.
+
+\paragraph{Routing-entropy regularizer.}
+We regularize the per-location view-weight distribution \(w\) from Sec.~\ref{sec:fusion} with an entropy \(H(w)\).
+Since this term is subtracted in Eq.~\ref{eq:total_loss}, minimizing the objective discourages collapse to a single view.
+Full details are provided in the supplementary material.
+
+
+
+% \section{Implementation details}
+% \label{subsec: implemntation-details}
+% \textbf{Pre-processing stage}
+% When using DINO models, we resized the images to 480x480 pixels. When using DINOv2 models, we resized the images to 476x476 pixels. 
+
+% \textbf{VoteCut}
+% The complete list of the utilized models appears in the supplementary materials (see  \ref{subsec:Utilized-models}). Unless specified otherwise, we utilized all aforementioned models and set $\tau^m=0.2$ and $k_{max}=3$. Further ablations related to these hyperparameters can be found in \cref{sec:ablations}. We set $\tau^{cut}=0.15$, as done by Wang \etal \cite{wang2023cut}.
+
+% To ensure accurate pixel alignment between proposals, we employ a two-step resizing approach. First, we resize all proposals to a fixed size prior to the IOU clustering phase. Then, after the pixel voting phase, we resize the final mask to match the image shape.
+
+% \textbf{Training details}
+% All experiments were performed using the Detectron2 \cite{wu2019detectron2} platform, using a batch size of 16 and the copy-paste augmentation \cite{Dwibedi_2017_ICCV, ghiasi2021simple}. 
+% Cascade Mask R-CNN \cite{cai2018cascade} detector is used for CAD.
+
+% All reported experiments have been conducted using two NVIDIA RTX-6000 GPUS.

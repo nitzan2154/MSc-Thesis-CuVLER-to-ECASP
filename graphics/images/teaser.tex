@@ -1,0 +1,121 @@
+% Replace these two filenames with your actual 512 x 512 images.
+\newcommand{\MaskImage}{images/masks_2x2_other.png}
+\newcommand{\ObjectImage}{images/3d_object_512_3.png}
+
+% ------------------------------------------------------------------
+% Dummy 6D pose values shown as overlay on the 3D object image.
+% Position in millimeters, orientation in degrees.
+% ------------------------------------------------------------------
+\newcommand{\PoseX}{-115.7}
+\newcommand{\PoseY}{-75.5}
+\newcommand{\PoseZ}{1004.7}
+\newcommand{\PoseYaw}{18.03}
+\newcommand{\PosePitch}{72.5}
+\newcommand{\PoseRoll}{129.8}
+
+% White text with black outline for labels on the mask image.
+\contourlength{0.9pt}
+\newcommand{\masklabel}[1]{\contour{black}{\textcolor{white}{#1}}}
+
+% TikZ 3D axes overlay macro.
+% Usage:
+%   \drawObjectAxes{<position>}{<ratio>}
+%
+% Example:
+%   \drawObjectAxes{([xshift=7mm,yshift=7mm]object.south west)}{1.0}
+%
+% Arguments:
+%   #1 position: any TikZ coordinate where the axes origin should be placed.
+%   #2 ratio:    scale factor for the axes size.
+\newcommand{\drawObjectAxes}[2]{%
+  \begin{scope}[shift={#1}, scale=#2, x=1mm, y=1mm, line cap=round, line join=round]
+    \draw[-{Latex[length=1.9mm,width=1.4mm]}, red!80!black,   line width=0.55pt] (0,0) -- (7,0);
+    \draw[-{Latex[length=1.9mm,width=1.4mm]}, green!55!black, line width=0.55pt] (0,0) -- (0,7);
+    \draw[-{Latex[length=1.9mm,width=1.4mm]}, blue!80!black,  line width=0.55pt] (0,0) -- (-4,-4);
+  \end{scope}%
+}
+
+\begin{tikzpicture}[
+    >=Latex,
+    imagebox/.style={
+        draw,
+       draw, rounded corners=2pt,
+        line width=0.8pt,
+        inner sep=2pt
+    },
+    modelblock/.style={
+        draw,
+       draw, rounded corners=3pt,
+        line width=0.9pt,
+        minimum width=22mm,
+        minimum height=13mm,
+        font=\sffamily\bfseries,
+        align=center
+    },
+    flowarrow/.style={
+        ->,
+       ->, line width=1.0pt,
+        shorten >=2pt,
+        shorten <=2pt
+    },
+    masktext/.style={
+        font=\sffamily\bfseries\small
+    },
+    posetext/.style={
+        anchor=north west,
+        align=left,
+        inner sep=0pt,
+        text=black,
+        font=\sffamily\fontsize{5.2}{5.8}\selectfont
+    }
+]
+
+% Input image: 4 concatenated binary masks, 512 x 512.
+\node[imagebox] (masks) {\includegraphics[width=35mm,height=35mm]{\MaskImage}};
+
+% Labels over the quadrants of the mask image.
+\node[masktext, anchor=north west]
+    at ([xshift=3pt,yshift=-3pt]masks.north west) {\masklabel{L}};
+\node[masktext, anchor=north east]
+    at ([xshift=-3pt,yshift=-3pt]masks.north east) {\masklabel{R}};
+\node[masktext, anchor=south west]
+    at ([xshift=2pt,yshift=39pt]masks.south west) {\masklabel{OL}};
+\node[masktext, anchor=south east]
+    at ([xshift=-3pt,yshift=39pt]masks.south east) {\masklabel{OR}};
+
+% Model block.
+\node[modelblock, right=18mm of masks] (model) {ECASP};
+
+% Output image: 3D object, 512 x 512.
+\node[imagebox, right=18mm of model] (object)
+    {\includegraphics[width=35mm,height=35mm]{\ObjectImage}};
+
+% Pose text overlay INSIDE the object image.
+% Positioned near the top-left so it behaves like an annotation overlay.
+\node[posetext]
+    at ([xshift=2.4mm,yshift=-2.4mm]object.north west) {%
+    \renewcommand{\arraystretch}{0.75}% controls row spacing
+    \textbf{Object pose}\\[0.4mm]
+    \textbf{Position [mm]}\\[-0.1mm]
+    $\begin{array}{@{}r@{\;}c@{\;}l@{}}
+        x & = & \PoseX\\[0.2mm]
+        y & = & \PoseY\\[0.2mm]
+        z & = & \PoseZ
+    \end{array}$\\[0.4mm]
+    \textbf{Orientation [deg]}\\[-0.1mm]
+    $\begin{array}{@{}l@{\;}c@{\;}l@{}}
+    \mathrm{yaw}   & = & \PoseYaw^\circ\\[0.2mm]
+    \mathrm{pitch} & = & \PosePitch^\circ\\[0.2mm]
+    \mathrm{roll}  & = & \PoseRoll^\circ
+\end{array}$
+};
+
+% ATikZ axes overlay for the 3D object image.
+% Change the first argument to move the axes, and the second to resize them.
+\drawObjectAxes{([xshift=7mm,yshift=7mm]object.south west)}{1.0}
+
+% Flow arrows.
+\draw[flowarrow] (masks.east) -- (model.west);
+\draw[flowarrow] (model.east) -- (object.west);
+
+\end{tikzpicture}

@@ -1,0 +1,15 @@
+\chapter{Conclusion and Limitation}
+\label{sec:conclusion}
+
+We presented ECASP, a silhouette-based approach for calibrated multi-view 6DoF pose estimation under occlusion.
+By using only binary masks and camera calibration, ECASP removes dependence on RGB appearance and depth sensing while preserving the geometric constraints of calibrated views.
+ECASP combines geometry-aware cross-view fusion with hybrid learned--geometric pose estimation.
+
+Trained only on CAD-rendered synthetic masks, ECASP achieves accurate pose estimation on real multi-view surgical-object data despite using substantially weaker visual-input assumptions than RGB- and RGB-D-based methods.
+Evaluation with YOLO masks shows that ECASP remains effective with automatically extracted, imperfect masks, while silhouette refinement recovers substantial accuracy lost to segmentation errors.
+These results suggest that calibrated multi-view silhouettes provide a practical representation for reducing appearance-related synthetic-to-real dependence in occluded settings.
+
+\textbf{Limitation.} ECASP assumes accurate camera calibration, reliable binary masks, and known rigid objects with CAD models.
+Calibration errors can misalign epipolar sampling and triangulation, while fragmented or missing masks can degrade silhouette features and pose estimation.
+Our predicted-mask evaluation confirms this sensitivity, particularly for thin object parts, although mask-specific training and silhouette refinement can improve robustness.
+These assumptions limit applicability in settings without reliable masks, object models, or calibrated multi-view observations.
