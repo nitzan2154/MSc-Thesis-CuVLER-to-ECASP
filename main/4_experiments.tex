@@ -29,6 +29,21 @@ The MVPSP training split is used only to derive pose, workspace, depth, and visi
 We sample object poses using these statistics together with uniformly sampled \(\mathrm{SO}(3)\) rotations, add synthetic geometric occluders, and render full and visible masks for supervision.
 After filtering invalid or extreme configurations, we obtain approximately \(46{,}351\) synthetic multi-view training samples.
 
+% BEGIN PAPER FIGURE: main.tex -- Calibrated camera setup
+
+\begin{figure}[!htbp]
+    \centering
+    \resizebox{0.48\textwidth}{!}{
+        {\fontfamily{phv}\selectfont\normalsize
+        \input{graphics/images/camera_setup}
+        }
+    }
+    \caption{ECASP uses the four calibrated static side cameras: left (L), right (R), opposite-left (OL), and opposite-right (OR).}
+
+    \label{fig:camera_setup}
+\end{figure}
+
+% END PAPER FIGURE: Calibrated camera setup
 % BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Synthetic Data Generation
 
 \label{supp:synthetic_data}

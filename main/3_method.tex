@@ -8,6 +8,21 @@ The enriched per-view features are combined by weighted aggregation, producing a
 This representation together with the enriched feature maps are passed to a hybrid pose head, which regresses rotation and estimates translation by combining geometric triangulation with a learned residual correction.
 During training, ECASP additionally uses mask-completion and allocentric-rotation objectives.
 
+% BEGIN PAPER FIGURE: main.tex -- ECASP architecture
+
+\begin{figure*}[!htbp]
+\centering
+\includesvg[width=\textwidth]{graphics/images/ECASP_full_model_final_final_best}
+
+\caption{ECASP architecture. The model takes multi-view binary masks and camera calibration as input.
+Each mask is cropped, resized, and encoded by a shared DINOv3 backbone.
+Pl\"ucker-ray positional encoding is then added to the extracted feature maps before multi-view fusion.
+The per-view features are enriched symmetrically through epipolar cross-view attention and then aggregated.
+The resulting multi-view representation is passed to a hybrid pose head that predicts rotation and combines triangulated and residual translation estimates.}
+\label{fig:architecture}
+\end{figure*}
+
+% END PAPER FIGURE: ECASP architecture
 \section{Problem Setup}
 \label{sec:problem_setup}
 ECASP takes as input \(N\) calibrated views \(V=\{v_i\}_{i=0}^{N-1}\) of a known rigid target object with an associated CAD model.
@@ -219,6 +234,17 @@ For a query view \(v_i\), tokens from \(F_{v_i}\) attend to features sampled fro
 Each view is treated as a query view, producing enriched feature maps \(\{\hat{F}_{v_i}\}_{i=0}^{N-1}\).
 
 
+% BEGIN PAPER FIGURE: main.tex -- Epipolar cross-view attention
+
+\begin{figure}[!htbp]
+\centering
+\includesvg[width=\linewidth]{graphics/images/cross_attention_diagram}
+
+\caption{Epipolar cross-view attention. For each query token, ECASP samples \(S\) locations along the calibrated epipolar line in each source view. The sampled features from all \(N-1\) views form the keys and values for multi-head cross-attention.}
+\label{fig:epipolar_attention}
+\end{figure}
+
+% END PAPER FIGURE: Epipolar cross-view attention
 \paragraph{Epipolar sampling.}
 For each query-source pair \((v_i,v_j)\), with \(i \neq j\), we compute the relative transform:
 \begin{equation}
@@ -293,6 +319,18 @@ A regression branch predicts rotation directly.
 Translation uses a hybrid design: a geometric branch triangulates the CAD origin to obtain \(t_{\mathrm{tri}}\), while a learned branch predicts a per-sample gated residual correction \(r\).
 The final translation combines the triangulated estimate with the gated residual.
 
+% BEGIN PAPER FIGURE: main.tex -- Hybrid pose head
+
+\begin{figure*}[!htbp]
+\centering
+\includesvg[width=\textwidth]{graphics/images/_hybrid_pose_estimation_final_better}
+
+\caption{Hybrid pose head. Rotation is predicted from aggregated and view-specific features, while translation combines DLT triangulation of the predicted CAD-origin projections with a confidence-gated residual correction. Loss-only auxiliary heads are used during training.}
+
+\label{fig:hybrid_pose_head}
+\end{figure*}
+
+% END PAPER FIGURE: Hybrid pose head
 \paragraph{Rotation branch.}
 \(F_{\mathrm{agg}}\) is first processed by a rotation-specific squeeze trunk, implemented as a lightweight \(1\times1\)-convolutional bottleneck, and then modulated by an AdaLN-Zero conditioner~\cite{peebles2023dit}.
 The conditioner predicts per-channel scale and shift parameters \((\gamma,\beta)\) from the concatenated crop descriptors \([c_{v_0},\ldots,c_{v_{N-1}}]\).
