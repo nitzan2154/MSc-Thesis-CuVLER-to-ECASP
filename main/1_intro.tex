@@ -1,6 +1,23 @@
 \chapter{Introduction}
 \label{sec:intro}
 
+% BEGIN PAPER FIGURE: main.tex -- ECASP setting overview
+
+\begin{figure}[H]
+\centering
+\begingroup
+\graphicspath{{graphics/}}
+\renewcommand{\sfdefault}{phv}
+\resizebox{0.92\textwidth}{!}{%
+    \input{graphics/images/teaser}
+}
+\endgroup
+\caption{Overview of the ECASP setting. From calibrated multi-view binary masks in the four side views \(L\), \(R\), \(OL\), and \(OR\), ECASP estimates the 6DoF pose of a known target object in the reference camera frame without RGB or depth input.}
+\label{fig:teaser}
+\end{figure}
+
+% END PAPER FIGURE: ECASP setting overview
+
 Accurate 6DoF object pose estimation enables applications such as robotic manipulation, augmented reality, and surgical navigation.
 Yet unlike a class label, bounding box, or segmentation mask, a 6DoF object pose cannot generally be annotated by sight.
 It requires a geometric object model and accurate object-to-camera alignment, making pose supervision costly, particularly under occlusion and in specialized environments.
@@ -21,22 +38,6 @@ We introduce ECASP, \emph{\textbf{E}pipolar \textbf{C}ross-\textbf{A}ttention fo
 ECASP uses epipolar cross-view attention to fuse silhouette evidence according to camera geometry and a hybrid geometric--learned pose head to recover 6DoF pose.
 Despite being optimized exclusively on synthetic silhouettes and using no RGB appearance, ECASP is competitive with RGB-based multi-view methods on the real MVPSP surgical-object benchmark~\cite{hein2025surgicalnavigation}.
 
-% BEGIN PAPER FIGURE: main.tex -- ECASP setting overview
-
-\begin{figure}[!htbp]
-\centering
-\begingroup
-\graphicspath{{graphics/}}
-\renewcommand{\sfdefault}{phv}
-\resizebox{0.92\textwidth}{!}{%
-    \input{graphics/images/teaser}
-}
-\endgroup
-\caption{Overview of the ECASP setting. From calibrated multi-view binary masks in the four side views \(L\), \(R\), \(OL\), and \(OR\), ECASP estimates the 6DoF pose of a known target object in the reference camera frame without RGB or depth input.}
-\label{fig:teaser}
-\end{figure}
-
-% END PAPER FIGURE: ECASP setting overview
 This work underscores the following contributions:
 
 \begin{itemize}
