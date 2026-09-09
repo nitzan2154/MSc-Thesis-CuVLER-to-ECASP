@@ -175,7 +175,7 @@ model and evaluation protocol from giving special status to one physical
 camera. After selection, we reorder the views so that the reference is
 denoted by \(v_0\).
 
-We use this assignment for both prediction and evaluation; all reported
+We use this assignment for both prediction and evaluation. All reported
 translations and rotations are expressed in the selected reference frame.
 
 % END SUPPLEMENTARY MATERIAL: Reference-View Assignment; Evaluation Protocol -- reference frame
@@ -206,7 +206,7 @@ The resulting stride-16 feature maps have spatial size \(H'\times W'=32\times32\
 The Pl\"ucker-ray positional encoding is projected to dimension \(C\) using a two-layer MLP.
 % BEGIN SUPPLEMENTARY MATERIAL: supplementary_now (1).tex -- Additional Architecture Details -- ray MLP
 
-The ray MLP has hidden widths \(128\) and \(256\); its output is added
+The ray MLP has hidden widths \(128\) and \(256\), its output is added
 to the corresponding backbone feature.
 
 % END SUPPLEMENTARY MATERIAL: Additional Architecture Details -- ray MLP
