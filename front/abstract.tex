@@ -21,9 +21,12 @@
 Accurate 6DoF object pose estimation under occlusion commonly relies on RGB appearance, depth sensing, or costly real pose supervision, limiting deployment for textureless, reflective, and symmetric objects.
 We present ECASP, which estimates the pose of known rigid objects from calibrated multi-view binary masks alone.
 By operating on silhouettes, ECASP avoids direct dependence on color, texture, material, and illumination and can be trained using CAD-rendered masks without real images as pose-training inputs.
+The synthetic training scenes include occluders and use camera calibration and training-set statistics to guide sampling.
 
 ECASP combines epipolar cross-view attention, which fuses silhouette features according to camera geometry, with a hybrid pose head that integrates learned prediction and geometric triangulation.
+Auxiliary training objectives encourage the recovery of complete object silhouettes from partially visible masks.
 
+We evaluate a drill and a rotationally symmetric screwdriver using four calibrated cameras.
 Despite discarding RGB appearance and being optimized only on synthetic
 silhouettes, ECASP is competitive with RGB-based multi-view methods on real
 samples from the MVPSP surgical-object benchmark and achieves the lowest

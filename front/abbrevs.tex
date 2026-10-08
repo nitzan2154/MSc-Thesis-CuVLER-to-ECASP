@@ -1,6 +1,7 @@
 % Abbreviations used in the ECASP thesis.
 
 \abbreviationsAndNotation{
+\section*{Abbreviations}
 \begin{itemize}
     \item[$-$] \textbf{6DoF:} Six degrees of freedom (three for translation and three for rotation).
     \item[$-$] \textbf{AdaLN-Zero:} Adaptive layer normalization with zero initialization.
@@ -23,4 +24,46 @@
     \item[$-$] \textbf{ViT:} Vision Transformer.
     \item[$-$] \textbf{YOLO:} You Only Look Once. YOLO26 is used for instance segmentation.
 \end{itemize}
+
+\clearpage
+\section*{Mathematical notation}
+\begingroup
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{@{}p{0.25\textwidth}p{0.70\textwidth}@{}}
+\textbf{Symbol} & \textbf{Meaning} \\
+\toprule
+\endfirsthead
+\multicolumn{2}{@{}l}{\textbf{Mathematical notation (continued)}} \\
+\textbf{Symbol} & \textbf{Meaning} \\
+\toprule
+\endhead
+\bottomrule
+\endfoot
+\(V, v_i, N\) & Set of input camera views, a member view, and the number of views. \\
+\(v_0\) & Reference camera view for the object pose and common geometric coordinates. \\
+\(R,t\) & Object rotation and translation, mapping object coordinates to the reference camera frame. \\
+\(SO(3), SE(3)\) & Three-dimensional rotation group and rigid-transformation group. \\
+\(X_{\mathrm{obj}},X_{v_0}\) & A point expressed in the object and reference-camera frames. \\
+\(K_v,\tilde K_v\) & Original and crop-adjusted (virtual) camera intrinsic matrices. \\
+\(T_{v_i\rightarrow v_j}\) & Rigid transform from camera frame \(v_i\) to camera frame \(v_j\). \\
+\(M_v\) & Binary input mask for view \(v\). \\
+\(M_v^{\mathrm{vis}},M_v^{\mathrm{full}}\) & Visible and full amodal object masks, respectively. \\
+\(\widehat M_v(R,t)\) & Object silhouette rendered in view \(v\) at candidate pose \((R,t)\). \\
+\(H_v,W_v\) & Height and width of the original mask in view \(v\). \\
+\(B_v,b_w,b_h\) & Foreground crop bounding box and its width and height. \\
+\(G,s_v,\delta_u,\delta_v\) & Square canvas size, resize factor, and horizontal/vertical padding offsets. \\
+\(A_v,c_v\) & Pixel-coordinate preprocessing transform and normalized crop descriptor. \\
+\(\rho,H',W',C\) & Backbone stride, feature-map height and width, and fusion-channel dimension. \\
+\(F_v,\widehat F_v\) & Per-view features before and after epipolar cross-view attention. \\
+\(o,d,m,\ell\) & Camera center, unit ray direction, Pl\"ucker moment \(m=o\times d\), and concatenated ray code. \\
+\(S\) & Number of sampled locations along each epipolar line. \\
+\(w_{v,h,w}\) & Normalized aggregation weight of view \(v\) at feature-map location \((h,w)\). \\
+\(\pi\) & Perspective projection from a three-dimensional camera point to normalized image coordinates. \\
+\(\mathcal L,\lambda\) & Training objective and weighting coefficients of its component losses. \\
+\(\mathcal J(R,t)\) & Multi-view silhouette objective minimized during pose refinement. \\
+\(\operatorname{cov}_v,\operatorname{exc}_v\) & Silhouette coverage and excess-rendering fractions in view \(v\). \\
+\(\varepsilon\) & Positive denominator-stabilization constant. \\
+\(\Delta R,\Delta t\) & Rotation error in degrees and translation error in millimeters. \\
+\end{longtable}
+\endgroup
 }

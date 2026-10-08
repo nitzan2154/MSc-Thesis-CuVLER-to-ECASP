@@ -15,8 +15,7 @@
 % Additionally, you must specify the degree for which you're writing
 % your thesis (MSc/PhD/MArch etc.)
 %
-%\documentclass[MSc,beforeDefense,fullpageDraft]{misc/iitthesis}
-\documentclass[MSc,fullpageDraft]{misc/iitthesis}
+\documentclass[MSc,beforeDefense,fullpageDraft]{misc/iitthesis}
 
 
 
@@ -38,26 +37,18 @@
 \newcites{pubinfo}{Acknowledgement page references}
 \def\iitthesisextramultibibdefs{}
 
-% Definitions of info fields for the thesis - subject, advisor,
-% faculty, acknowledgements, etc. etc. This file must contain Hebrew
-% text, so the question of its character set encoding is significant.
-% This templated uses the iso-8859-8-i charset (i.e. single-byte logical 
-% Hebrew; it's about the same as the windows-1255 codepage, but not the
-% same as UTF-8) - and this works with MikTeX 2.9 and using pdfelatex.
-% With your TeX distribution you might need to create files in the
-% UTF-8 charset.
+% Thesis metadata and bilingual text are stored as UTF-8.
+\input{misc/thesis-fields}
 
-\include{misc/thesis-fields}
-
-% NOTE! this must be after the thesis-fields include since important compiler globals where chnaged and we should import them again with /usepackage. For now, ignore the warning about /thesis-fields be added before \begin{document}, this is a workaround.
 \input{preamble}
+\usepackage{misc/submission-layout}
 
 \begin{document}
 
 
 % Personal acknowledgements (are only used for the post-exam
 % version)
-\include{front/personal-acks}
+\input{front/personal-acks}
 
 % The abstract in Hebrew and in English should have its own file.
 %
@@ -65,12 +56,12 @@
 % - You can split this one, and have separate files for the English
 %   and the Hebrew abstract
 % - regulations require the English abstract contain between 200 and
-%   500 words, and the Hebrew abstract contain between 1,000 and 2,000
+%   500 words, and the Hebrew abstract contain between 500 and 2,000
 %   words (making it something between an abstract and an introduction
 %   with an overview of results).
 % - Be careful with links in Hebrew text (wrap them in \L{}).
-\include{front/abstract}
-\include{front/abbrevs}
+\input{front/abstract}
+\input{front/abbrevs}
 
 % Definitions useful for anything you write, which you also
 % include in any articles, presentations, HW assignments and other
@@ -79,8 +70,7 @@
 % LaTeX tricks, and package use commands
 % \include{misc/my-general}
 
-% Definitions, settings and tweaks for this thesis specifically
-\include{misc/my-thesis-specific}
+% Submission-specific layout is loaded above; no placeholder include is needed.
 
 % Front Matter
 % ------------
@@ -148,7 +138,7 @@
 % - Title page
 % - Acknowledgements page
 %  (NO table of contents or list of figures in Hebrew)
-% - (Extended) abstract (1000-2000 words)
+% - (Extended) abstract (500-2000 words)
 %
 % based on information you've provided in the thesis-fields file
 % (including the relative paths to your bib files). The Hebrew

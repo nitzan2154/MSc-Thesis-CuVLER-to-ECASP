@@ -1,0 +1,60 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{submission-layout}[2026/10/08 Electronic pre-examination thesis layout]
+
+% Keep the existing BibTeX-based thesis class and research macros. These
+% overrides implement the current electronic submission front/back matter.
+\RequirePackage{longtable}
+\RequirePackage{array}
+
+% An electronic submission has consecutive pages, without binding blanks.
+\@twosidefalse
+\@openrightfalse
+\geometry{a4paper,nohead,twoside=false,bindingoffset=0cm,
+  top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm}
+
+\renewcommand{\makefrontmatter}{%
+  \hypersetup{pdftitle={\iitthesis@titleEnglish},pdfauthor={\iitthesis@authorEnglish}}%
+  \pagestyle{empty}%
+  \emptypagenumbering
+  \maketitleEnglish
+  \clearpage
+  \makeacknowledgementsEnglish
+  \clearpage
+  \tableofcontents
+  \clearpage
+  \conditionallistoffigures
+  \clearpage
+  \listoftables
+  \addcontentsline{toc}{chapter}{List of Tables}%
+  \clearpage
+  \pagestyle{plain}%
+  \pagenumbering{arabic}%
+  \makeabstractEnglish
+  \clearpage
+  \ifbool{iitthesis-abbrevs}{%
+    \makeabbreviationsAndNotation
+    \clearpage
+  }{}%
+}
+
+% Preserve the class's reversed Hebrew page order and Roman abstract numbering;
+% omit only the obsolete outer cover and its separator.
+\patchcmd{\makebackmatter}
+  {\makecoverHebrew\cleardoublepage}
+  {}{}{
+    \PackageError{submission-layout}{Cannot remove Hebrew outer cover}
+      {The thesis class changed; review the back-matter override.}%
+  }
+
+% Add the bibliography to the contents at its actual chapter opening.
+\pretocmd{\thebibliography}
+  {\clearpage\phantomsection\addcontentsline{toc}{chapter}{Bibliography}}
+  {}{\PackageError{submission-layout}{Cannot add bibliography to contents}{}}
+
+% The inherited Hebrew typesetting can flip equation-number parentheses.
+\AtEndPreamble{%
+  \def\maketag@@@#1{\hbox{\m@th\normalfont\LRE{#1}}}%
+  \def\tagform@#1{\maketag@@@{(\ignorespaces#1\unskip)}}%
+}
+
+\endinput
