@@ -46,10 +46,14 @@
       {The thesis class changed; review the back-matter override.}%
   }
 
-% Add the bibliography to the contents at its actual chapter opening.
-\pretocmd{\thebibliography}
+% Add the main bibliography to the contents through the class's own command.
+% Language packages can redefine thebibliography after this package is loaded.
+% Replace the standalone bookmark so the contents entry creates just one bookmark.
+\patchcmd{\makebibliography}
+  {\pdfbookmark[0]{Bibliography}{bib}}
   {\clearpage\phantomsection\addcontentsline{toc}{chapter}{Bibliography}}
-  {}{\PackageError{submission-layout}{Cannot add bibliography to contents}{}}
+  {}{\PackageError{submission-layout}{Cannot add bibliography to contents}
+    {The thesis class changed; review the makebibliography override.}}
 
 % The inherited Hebrew typesetting can flip equation-number parentheses.
 \AtEndPreamble{%
